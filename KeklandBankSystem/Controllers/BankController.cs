@@ -3589,6 +3589,9 @@ namespace KeklandBankSystem.Controllers
             var org = await _bankServices.GetOrganizations(id);
 
 
+            if(perm == null || user == null || org == null)
+                return RedirectToAction("Error", "Bank", new { code = 501 });
+
             if (perm.CreateItemOrg || user.Id == org.AdminId || user.Id == org.Zam2Name || user.Id == org.Zam1Name)
             {
                 var item = new ShopItem
