@@ -122,7 +122,7 @@
                                 <a class="menu-url" href="@Url.Action("EditOrganizationZam", "Bank", new { id = Model.organization.Id })"><i class="fas fa-edit"></i> Изменить заместителей</a>
                             }
 
-                            @if (perm.ChangeOrganizationEconomy || perm.ChangeOrganizationInfo)
+                            @if (user.Id == Model.organization.AdminId || perm.ChangeOrganizationEconomy || perm.ChangeOrganizationInfo)
                             {
                                 <a class="menu-url" href="@Url.Action("EditOrganization", "Bank", new { id = Model.organization.Id })"><i class="fas fa-edit"></i> Изменить организацию</a>
                             }
