@@ -479,7 +479,7 @@ namespace KeklandBankSystem
             if (delta < 1 * MINUTE)
             {
                 if ((ts.Seconds % 10) == 1) return ts.Seconds + " секунду назад";
-                else if ((ts.Seconds % 10) >= 2 && (ts.Seconds % 10) <= 4) return ts.Seconds + " секунды назад";
+                if ((ts.Seconds % 10) >= 2 && (ts.Seconds % 10) <= 4) return ts.Seconds + " секунды назад";
                 return ts.Seconds + " секунд назад";
             }
 
@@ -489,7 +489,7 @@ namespace KeklandBankSystem
             if (delta < 59 * MINUTE)
             {
                 if ((ts.Minutes % 10) == 1) return ts.Minutes + " минуту назад";
-                else if ((ts.Minutes % 10) >= 2 && (ts.Minutes % 10) <= 4) return ts.Minutes + " минуты назад";
+                if ((ts.Minutes % 10) >= 2 && (ts.Minutes % 10) <= 4) return ts.Minutes + " минуты назад";
                 return ts.Minutes + " минут назад";
             }
 
@@ -499,7 +499,7 @@ namespace KeklandBankSystem
             if (delta < 24 * HOUR)
             {
                 if (Math.Abs(ts.Hours) == 21) return Math.Abs(ts.Hours) + " час назад";
-                else if ((Math.Abs(ts.Hours) % 10) >= 2 && (Math.Abs(ts.Hours) % 10) <= 4) return Math.Abs(ts.Hours) + " часа назад";
+                if ((Math.Abs(ts.Hours) % 10) >= 2 && (Math.Abs(ts.Hours) % 10) <= 4) return Math.Abs(ts.Hours) + " часа назад";
                 return Math.Abs(ts.Hours) + " часов назад";
             }
 
@@ -512,8 +512,9 @@ namespace KeklandBankSystem
             if (delta < 30 * DAY)
             {
                 if (ts.Days == 11 || ts.Days == 12 || ts.Days == 13 || ts.Days == 14) return ts.Days + " дней назад";
-                else if (ts.Days == 21) return "21 день назад";
-                else if ((ts.Days % 10) >= 2 && (ts.Days % 10) <= 4) return ts.Days + " дня назад";
+                if (ts.Days == 21) return "21 день назад";
+                if ((ts.Days % 10) >= 2 && (ts.Days % 10) <= 4) return ts.Days + " дня назад";
+
                 return ts.Days + " дней назад";
             }
 
@@ -524,14 +525,13 @@ namespace KeklandBankSystem
                 if (months is >= 2 and <= 4) return months + " месяца назад";
                 return months + " месяцев назад";
             }
-            else
-            {
-                var years = Convert.ToInt32(Math.Floor((double)ts.Days / 365));
-                if (years == 11 || years == 12 || years == 13 || years == 14) return years + " лет назад";
-                else if ((years % 10) == 1) return years + " год назад";
-                else if ((years % 10) >= 2 && (years % 10) <= 4) return years + " года назад";
-                return years + " лет назад";
-            }
+
+            var years = Convert.ToInt32(Math.Floor((double)ts.Days / 365));
+            if (years == 11 || years == 12 || years == 13 || years == 14) return years + " лет назад";
+            if ((years % 10) == 1) return years + " год назад";
+            if ((years % 10) >= 2 && (years % 10) <= 4) return years + " года назад";
+
+            return years + " лет назад";
         }
     }
 }

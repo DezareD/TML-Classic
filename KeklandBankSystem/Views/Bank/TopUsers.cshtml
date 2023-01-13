@@ -60,7 +60,7 @@
 
                         var items = await _BankServices.GetUserItem(user);
 
-                        var ret = new User() { };
+                        var ret = new User { };
 
                         var itemMoney = 0;
 
@@ -71,7 +71,7 @@
 
                         if (dep != null)
                         {
-                            ret = new User()
+                            ret = new User
                             {
                                 Money = user.Money + dep.Money + itemMoney,
                                 Name = user.Name,
@@ -80,7 +80,7 @@
                         }
                         else
                         {
-                            ret = new User()
+                            ret = new User
                             {
                                 Money = user.Money + itemMoney,
                                 Name = user.Name,
