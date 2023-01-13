@@ -24,6 +24,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Linq;
 using VkNet.Abstractions;
 
 namespace KeklandBankSystem.Controllers
@@ -2898,6 +2899,58 @@ namespace KeklandBankSystem.Controllers
             }
             else return RedirectToAction("Error", "Bank", new { code = 700 });
         }
+
+        [HttpPost("upload_image_ckeditor")]
+        public async Task<IActionResult> UploadImage(IFormFile upload)
+        {
+
+            if (upload != null)
+            {
+                if (upload.Length > 10485760) // 10mb
+                {
+                    return Json(new
+                    {
+                        uploaded = 0,
+                        error = new
+                        {
+                            message = "Файл слишком большой!"
+                        }
+                    });
+                }
+
+                if (!upload.IsImage())
+                {
+                    return Json(new
+                    {
+                        uploaded = 0,
+                        error = new
+                        {
+                            message = "Это не изоображение!"
+                        }
+                    });
+                }
+
+                var img = await _bankServices.CreateImageSys(_appEnvironment, upload, "userImagesStatic", -1);
+                return Json(new
+                {
+                    uploaded = 1,
+                    fileName = img.GenerateName,
+                    url = img.ScreePath
+                });
+            }
+            else
+            {
+                return Json(new
+                {
+                    uploaded = 0,
+                    error = new
+                    {
+                        message = "Ошибка сервера."
+                    }
+                });
+            }
+        }
+
 
         [HttpPost("user/create_ticket")]
         [Authorize]

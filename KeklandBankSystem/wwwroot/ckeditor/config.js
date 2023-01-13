@@ -22,15 +22,15 @@ CKEDITOR.editorConfig = function( config ) {
 	
     config.font_defaultLabel = 'Arial';
 
-    config.filebrowserImageUploadUrl = '/Bank/UploadImage' //Action for Uploding image  
+    config.filebrowserImageUploadUrl = '/upload_image_ckeditor' //Action for Uploding image  
 
     config.removePlugins = 'elementspath,magicline,image'; // autogrow resize
     config.extraPlugins = 'dialog,autogrow,lineutils,mentions,autocomplete,textmatch,autolink,uploadimage,image'; // image2 ,ajax,xml textwatcher,imageresizerowandcolumn
 
-    config.imageUploadUrl = '/Bank/UploadImage';
+    config.imageUploadUrl = '/upload_image_ckeditor';
 
     config.cloudServices_tokenUrl = '';
-    config.cloudServices_uploadUrl = '/Bank/UploadImage';
+    config.cloudServices_uploadUrl = '/upload_image_ckeditor';
 
 
 	config.fullPage = false;

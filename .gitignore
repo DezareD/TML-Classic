@@ -136,3 +136,5 @@ docker-compose.override.yml
 .env
 
 .vs/
+
+KeklandBankSystem/wwwroot/userImagesStatic/
