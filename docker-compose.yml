@@ -35,11 +35,11 @@ services:
     ports:
       - 5001:5001
     volumes:
-      - ./KeklandBankSystem/wwwroot/user_img:/app/wwwroot/user_img
-      - ./KeklandBankSystem/wwwroot/userImages:/app/wwwroot/userImages
-      - ./KeklandBankSystem/wwwroot/userImagesAds:/app/wwwroot/userImagesAds
-      - ./KeklandBankSystem/wwwroot/userImagesStatic:/app/wwwroot/userImagesStatic
-      - ./KeklandBankSystem/wwwroot/userImagesTicket:/app/wwwroot/userImagesTicket
+      - /var/lib/docker/volumes/rival-politics-core/_data/tml-classic/wwroot/user_img:/app/wwwroot/user_img
+      - /var/lib/docker/volumes/rival-politics-core/_data/tml-classic/wwwroot/userImages:/app/wwwroot/userImages
+      - /var/lib/docker/volumes/rival-politics-core/_data/tml-classic/wwwroot/userImagesAds:/app/wwwroot/userImagesAds
+      - /var/lib/docker/volumes/rival-politics-core/_data/tml-classic/wwwroot/userImagesStatic:/app/wwwroot/userImagesStatic
+      - /var/lib/docker/volumes/rival-politics-core/_data/tml-classic/wwwroot/userImagesTicket:/app/wwwroot/userImagesTicket
 
 volumes:
   tml-classic-volume:
