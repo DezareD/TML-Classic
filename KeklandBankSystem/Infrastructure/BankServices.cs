@@ -319,7 +319,7 @@ namespace KeklandBankSystem.Infrastructure
 
         public async Task<PermissionAdmin> GetUserPermission(User user)
         {
-            var defaultPermission = new PermissionAdmin() { };
+            var defaultPermission = new PermissionAdmin { };
 
             if (user == null) return defaultPermission;
 
@@ -503,7 +503,7 @@ namespace KeklandBankSystem.Infrastructure
         {
             var fileName = RandomString(16);
 
-            var model = new ImageSystem()
+            var model = new ImageSystem
             {
                 ScreePath = "/" + sFilePath + "/" + fileName + ".png",
                 MainPath = i.WebRootPath + "/" + sFilePath + "/" + fileName + ".png",
@@ -532,7 +532,7 @@ namespace KeklandBankSystem.Infrastructure
 
             foreach (var s in govs)
             {
-                retList.Add(new GovermentStatistics()
+                retList.Add(new GovermentStatistics
                 {
                     gov = s,
                     Balance = (await GetGovermentOrganization(s.Id)).Sum(m => m.Balance)
@@ -544,10 +544,8 @@ namespace KeklandBankSystem.Infrastructure
             {
                 return retList.OrderByDescending(m => m.Balance).ToList().GetRange(0, col);
             }
-            else
-            {
-                return retList.OrderByDescending(m => m.Balance).ToList();
-            }
+
+            return retList.OrderByDescending(m => m.Balance).ToList();
         }
 
         public List<Organization> GetTopOrganization(int col)
@@ -677,7 +675,7 @@ namespace KeklandBankSystem.Infrastructure
 
         public async Task AddUsedCode(PassCode code, User user)
         {
-            var passcode = new UsedPassCode()
+            var passcode = new UsedPassCode
             {
                 PassCodeId = code.Id,
                 UserId = user.Id
@@ -717,7 +715,7 @@ namespace KeklandBankSystem.Infrastructure
                     points += a.RarePoint;
                 }
 
-                list.Add(new UserTopItems()
+                list.Add(new UserTopItems
                 {
                     userId = i.Id,
                     ItemPoints = points
@@ -757,7 +755,7 @@ namespace KeklandBankSystem.Infrastructure
 
             if (a == null || a.Count <= 0)
             {
-                bdb.ItemStatistics.Add(new ItemStatistic()
+                bdb.ItemStatistics.Add(new ItemStatistic
                 {
                     Date = NowDateTime(),
                     BuyCount = 0,
@@ -842,7 +840,7 @@ namespace KeklandBankSystem.Infrastructure
             }
             else
             {
-                bdb.ShopItemUser.Add(new ShopItemUser()
+                bdb.ShopItemUser.Add(new ShopItemUser
                 {
                     ShopItemId = item.Id,
                     UserId = user.Id,
@@ -978,7 +976,7 @@ namespace KeklandBankSystem.Infrastructure
             {
                 var item = await GetShopItem(a.ShopItemId);
 
-                retList.Add(new TradeShopItem()
+                retList.Add(new TradeShopItem
                 {
                     item = item,
                     itemShop = a
@@ -1206,7 +1204,7 @@ namespace KeklandBankSystem.Infrastructure
 
         public async Task SetUserToJob(User user, OrgJob org)
         {
-            var job = new OrgJobUser()
+            var job = new OrgJobUser
             {
                 OrgJobId = org.Id,
                 UserId = user.Id
@@ -1218,7 +1216,7 @@ namespace KeklandBankSystem.Infrastructure
 
         public async Task CreateOrganization(Organization org)
         {
-            var job = new OrgJob()
+            var job = new OrgJob
             {
                 Name = "Администратор",
                 PayDay = 0,
@@ -1227,7 +1225,7 @@ namespace KeklandBankSystem.Infrastructure
 
             await CreateOrgJob(job);
 
-            await SetUserToJob(new User() { Id = org.AdminId }, job);
+            await SetUserToJob(new User { Id = org.AdminId }, job);
 
             bdb.Organizations.Add(org);
             await bdb.SaveChangesAsync();
@@ -1246,7 +1244,7 @@ namespace KeklandBankSystem.Infrastructure
             list1.AddRange(list2);
 
             if(val != -1) return list1.OrderByDescending(m => m.Date).Take(val).ToList();
-            else return list1.OrderByDescending(m => m.Date).ToList();
+            return list1.OrderByDescending(m => m.Date).ToList();
         }
 
         public async Task SaveDeposit(Deposit dep)
@@ -1349,7 +1347,7 @@ namespace KeklandBankSystem.Infrastructure
                 {
                     obshee += userNal;
                     await AddToRecdStat(userNal);
-                    await CreateTransaction(new Transaction()
+                    await CreateTransaction(new Transaction
                     {
                         Date = NowDateTime(),
                         Id1 = user.Id,
@@ -1362,7 +1360,7 @@ namespace KeklandBankSystem.Infrastructure
 
             org.Balance += obshee;
 
-            await CreateBankTransaction(new BankTransaction()
+            await CreateBankTransaction(new BankTransaction
             {
                 Date = NowDateTime(),
                 Id1 = -1,
@@ -1499,7 +1497,7 @@ namespace KeklandBankSystem.Infrastructure
 
                     await AddToSpentStat(org.Influence);
 
-                    await CreateBankTransaction(new BankTransaction()
+                    await CreateBankTransaction(new BankTransaction
                     {
                         BankId2 = org.Id,
                         Date = NowDateTime(),
@@ -1519,7 +1517,7 @@ namespace KeklandBankSystem.Infrastructure
 
             await UpdateOrganization(org_main);
 
-            await CreateBankTransaction(new BankTransaction()
+            await CreateBankTransaction(new BankTransaction
             {
                 Date = NowDateTime(),
                 BankId1 = org_main.Id,
@@ -1559,7 +1557,7 @@ namespace KeklandBankSystem.Infrastructure
 
             foreach(var i in list)
             {
-                bdb.ItemStatistics.Add(new ItemStatistic()
+                bdb.ItemStatistics.Add(new ItemStatistic
                 {
                     Date = NowDateTime(),
                     BuyCount = 0,
@@ -1573,7 +1571,7 @@ namespace KeklandBankSystem.Infrastructure
         
         public async Task AddStatistics()
         {
-            bdb.Statistics.Add(new Statistic()
+            bdb.Statistics.Add(new Statistic
             {
                 Date = NowDateTime(),
                 Recd = 0,
@@ -1665,7 +1663,7 @@ namespace KeklandBankSystem.Infrastructure
             list.AddRange(list2);
 
             if (col != -1) return list.OrderByDescending(m => m.Date).Take(col).ToList();
-            else return list.OrderByDescending(m => m.Date).ToList();
+            return list.OrderByDescending(m => m.Date).ToList();
         }
 
         public List<Ticket> GetTickets(User user, int col)
@@ -1702,7 +1700,7 @@ namespace KeklandBankSystem.Infrastructure
                     {
                         if (i.Money + dep.Money + itemMoney > 0)
                         {
-                            ret.Add(new User()
+                            ret.Add(new User
                             {
                                 Money = i.Money + dep.Money + itemMoney + (i.Welfare + i.WelfareItem) * 90,
                                 Name = i.Name,
@@ -1715,7 +1713,7 @@ namespace KeklandBankSystem.Infrastructure
                     {
                         if (i.Money + itemMoney > 0)
                         {
-                            ret.Add(new User()
+                            ret.Add(new User
                             {
                                 Money = i.Money + itemMoney + (i.Welfare + i.WelfareItem) * 90,
                                 Name = i.Name,
@@ -1753,7 +1751,7 @@ namespace KeklandBankSystem.Infrastructure
                 if (a.isNeactive == false)
                 {
 
-                    var model = new ShopItemUser()
+                    var model = new ShopItemUser
                     {
                         ShopItemId = a.ShopItemId,
                         UserId = a.UserId,
@@ -2147,7 +2145,7 @@ namespace KeklandBankSystem.Infrastructure
 
                             await SpentMoney(payDay);
 
-                            await CreateTransaction(new Transaction()
+                            await CreateTransaction(new Transaction
                             {
                                 Date = NowDateTime(),
                                 Id1 = -1,
@@ -2156,7 +2154,7 @@ namespace KeklandBankSystem.Infrastructure
                                 Value = payDay
                             });
 
-                            await CreateBankTransaction(new BankTransaction()
+                            await CreateBankTransaction(new BankTransaction
                             {
                                 Date = NowDateTime(),
                                 BankId1 = org.Id,
@@ -2264,7 +2262,7 @@ namespace KeklandBankSystem.Infrastructure
                 await SpentMoney(moneyBank);
                 org.Balance -= moneyBank;
 
-                await CreateBankTransaction(new BankTransaction()
+                await CreateBankTransaction(new BankTransaction
                 {
                     Date = NowDateTime(),
                     BankId1 = org.Id,

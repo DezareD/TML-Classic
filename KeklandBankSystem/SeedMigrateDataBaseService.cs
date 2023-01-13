@@ -23,7 +23,7 @@ namespace KeklandBankSystem
 
             if(usersCount <= 0)
             {
-                var user = new User()
+                var user = new User
                 {
                     PremiumDay = 0,
                     Coins = 0,
@@ -43,23 +43,23 @@ namespace KeklandBankSystem
 
                 bdb.Users.Add(user);
                 await bdb.SaveChangesAsync();
-                var role = new UserRole()
+                var role = new UserRole
                 {
                     RoleName = "Owner",
                     UserId = user.Id
                 };
 
-                var listRolePermission = new List<PermissionAdmin>()
+                var listRolePermission = new List<PermissionAdmin>
                 {
-                    new PermissionAdmin()
+                    new PermissionAdmin
                     {
                         RoleName = "User"
                     },
-                    new PermissionAdmin()
+                    new PermissionAdmin
                     {
                         RoleName = "Tester"
                     },
-                    new PermissionAdmin()
+                    new PermissionAdmin
                     {
                         RoleName = "Moderator",
                         CheckGoverments = true,
@@ -72,7 +72,7 @@ namespace KeklandBankSystem
                         ShowAdminStatistics = true,
                         GetStatistics = true
                     },
-                    new PermissionAdmin()
+                    new PermissionAdmin
                     {
                         RoleName = "Administrator",
                         AddItemUser = true,
@@ -106,7 +106,7 @@ namespace KeklandBankSystem
                         ShowAdminStatistics = true,
                         ShowAllOrgOrUserTransaction = true
                     },
-                    new PermissionAdmin()
+                    new PermissionAdmin
                     {
                         RoleName = "Owner",
                         AddItemUser = true,
@@ -158,7 +158,7 @@ namespace KeklandBankSystem
             var govsys = await bdb.SystemMain.FirstOrDefaultAsync();
             if (govsys == null)
             {
-                var system = new SystemMain()
+                var system = new SystemMain
                 {
                     CasesIsOn = false,
                     CasinoIsOn = false,
@@ -179,10 +179,10 @@ namespace KeklandBankSystem
             }
 
             // Todo
-            var weithLevel = new List<WeithLevel>()
+            var weithLevel = new List<WeithLevel>
             {
-                new WeithLevel() { Name = "Селянин" },
-                new WeithLevel() { Name = "Гражданин" }
+                new WeithLevel { Name = "Селянин" },
+                new WeithLevel { Name = "Гражданин" }
             };
 
             var weithLevelCount = bdb.WeithLevel.Count();
@@ -200,7 +200,7 @@ namespace KeklandBankSystem
                 var ownerUser = await bdb.UserRoles.Where(m => m.RoleName == "Owner").FirstOrDefaultAsync();
                 var userreg = await bdb.Users.Where(m => m.Id == ownerUser.UserId).FirstOrDefaultAsync();
 
-                var organization = new Organization()
+                var organization = new Organization
                 {
                     Name = "Центральный орган Торговой Мемной Лиги",
                     Short_Desc = "Предназначен для технических выплат в орагнизации, поддержание работы казино, товаров, накопления налогов. Содержит изначальный пул денег денег для всего ТМЛ.",
@@ -224,7 +224,7 @@ namespace KeklandBankSystem
 
             if(statisticCount <= 0)
             {
-                var statistic = new Statistic()
+                var statistic = new Statistic
                 {
                     Date = DateTime.Now.Ticks,
                     Recd = 0,

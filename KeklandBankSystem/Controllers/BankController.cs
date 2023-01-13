@@ -60,7 +60,7 @@ namespace KeklandBankSystem.Controllers
             ViewBag.CurrectPage = page;
             ViewBag.CountPage = maxPage;
 
-            var model = new IndexPanelForms()
+            var model = new IndexPanelForms
             {
                 allGovs = govs.Skip(((int)page - 1) * itemOnPage).Take(itemOnPage).ToList(),
                 LastStatistics = await _bankServices.GetLastStatistic(),
@@ -80,10 +80,9 @@ namespace KeklandBankSystem.Controllers
             var user = await _bankServices.GetUser();
             var perm = await _bankServices.GetUserPermission(user);
             if (perm.CreateArticles)
-            {
                 return View(new ArticlesModel());
-            }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpPost("create_article")]
@@ -91,48 +90,48 @@ namespace KeklandBankSystem.Controllers
         {
             var user = await _bankServices.GetUser();
             var perm = await _bankServices.GetUserPermission(user);
-            if (perm.CreateArticles)
+            if (!perm.CreateArticles) 
+                return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            var article = new Articles
             {
-                var article = new Articles()
-                {
-                    Date = _bankServices.NowDateTime(),
-                    HtmlText = model.HtmlText,
-                    MiniText = model.MiniText
-                };
+                Date = _bankServices.NowDateTime(),
+                HtmlText = model.HtmlText,
+                MiniText = model.MiniText
+            };
 
-                if (model.ImageUrl != null || !string.IsNullOrEmpty(model.ImageUrlString))
+            if (model.ImageUrl != null || !string.IsNullOrEmpty(model.ImageUrlString))
+            {
+                if (model.ImageUrl != null)
                 {
-                    if (model.ImageUrl != null)
+                    if (model.ImageUrl.Length > 10485760) // 10mb
                     {
-                        if (model.ImageUrl.Length > 10485760) // 10mb
-                        {
-                            ModelState.AddModelError("", "Файл " + model.ImageUrl.FileName + " имеет неверный размер.");
-                            return View(model);
-                        }
-
-                        if (!model.ImageUrl.IsImage())
-                        {
-                            ModelState.AddModelError("", "Файл " + model.ImageUrl.FileName + " имеет неверный формат.");
-                            return View(model);
-                        }
-
-                        var img = await _bankServices.CreateImageSys(_appEnvironment, model.ImageUrl, "userImagesStatic", -1);
-
-                        article.ImageUrl = img.ScreePath;
+                        ModelState.AddModelError("", "Файл " + model.ImageUrl.FileName + " имеет неверный размер.");
+                        return View(model);
                     }
-                    else article.ImageUrl = model.ImageUrlString;
-                }
-                else
-                {
-                    ModelState.AddModelError("", "Вы не загрузили картинку.");
-                    return View(model);
-                }
 
-                await _bankServices.CreateArticles(article);
+                    if (!model.ImageUrl.IsImage())
+                    {
+                        ModelState.AddModelError("", "Файл " + model.ImageUrl.FileName + " имеет неверный формат.");
+                        return View(model);
+                    }
 
-                return RedirectToAction("SingleArticle", "Bank", new { id = article.Id });
+                    var img = await _bankServices.CreateImageSys(_appEnvironment, model.ImageUrl, "userImagesStatic", -1);
+
+                    article.ImageUrl = img.ScreePath;
+                }
+                else article.ImageUrl = model.ImageUrlString;
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+            else
+            {
+                ModelState.AddModelError("", "Вы не загрузили картинку.");
+                return View(model);
+            }
+
+            await _bankServices.CreateArticles(article);
+
+            return RedirectToAction("SingleArticle", "Bank", new { id = article.Id });
+
         }
 
         [HttpGet("article/{id}")]
@@ -141,10 +140,9 @@ namespace KeklandBankSystem.Controllers
             var article = await _bankServices.GetArticles(id);
 
             if (article != null)
-            {
                 return View(article);
-            }
-            else return RedirectToAction("Error", "Bank", new { code = 404 });
+
+            return RedirectToAction("Error", "Bank", new { code = 404 });
         }
 
         [HttpGet("check_news")]
@@ -154,24 +152,25 @@ namespace KeklandBankSystem.Controllers
             var user = await _bankServices.GetUser();
             var perm = await _bankServices.GetUserPermission(user);
 
-            if (perm.CheckNews)
-            {
-                var model = (await _bankServices.GetAllNews()).Where(m => m.Type == "status_timing").FirstOrDefault();
+            if (!perm.CheckNews) 
+                return RedirectToAction("Error", "Bank", new { code = 700 });
 
-                if (model != null)
+            var model = (await _bankServices.GetAllNews()).Where(m => m.Type == "status_timing").FirstOrDefault();
+
+            if (model != null)
+            {
+                return View(new CheckNewsModel
                 {
-                    return View(new CheckNewsModel()
-                    {
-                        MiniInformation = model.MiniInformation,
-                        Name = model.Name,
-                        Url = model.Url,
-                        Rare = 0,
-                        Id = model.Id
-                    });
-                }
-                else return View(null);
+                    MiniInformation = model.MiniInformation,
+                    Name = model.Name,
+                    Url = model.Url,
+                    Rare = 0,
+                    Id = model.Id
+                });
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return View(null);
+
         }
 
         [HttpPost("check_news")]
@@ -181,45 +180,45 @@ namespace KeklandBankSystem.Controllers
             var user = await _bankServices.GetUser();
             var perm = await _bankServices.GetUserPermission(user);
 
-            if (perm.CheckNews)
+            if (!perm.CheckNews) 
+                return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            if (model.isOk)
             {
-                if (model.isOk)
+                if (model.Rare < 1 || model.Rare > 4)
                 {
-                    if (model.Rare < 1 || model.Rare > 4)
-                    {
-                        ModelState.AddModelError("", "Неверная популярность ( от 1 до 4 )");
-                        return View(model);
-                    }
-
-                    var news = await _bankServices.GetNews(model.Id);
-
-                    news.MiniInformation = model.MiniInformation;
-                    news.Name = model.Name;
-                    news.Url = model.Url;
-                    news.Type = "status_ok";
-
-                    switch (model.Rare)
-                    {
-                        case 1: news.ShowsDays = 2; break;
-                        case 2: news.ShowsDays = 5; break;
-                        case 3: news.ShowsDays = 9; break;
-                        case 4: news.ShowsDays = 14; break;
-                    }
-
-                    news.Rare = model.Rare;
-
-                    await _bankServices.UpdateNews(news);
-                }
-                else
-                {
-                    var news = await _bankServices.GetNews(model.Id);
-
-                    await _bankServices.DeleteNews(model.Id);
+                    ModelState.AddModelError("", "Неверная популярность ( от 1 до 4 )");
+                    return View(model);
                 }
 
-                return RedirectToAction("CheckNews", "Bank");
+                var news = await _bankServices.GetNews(model.Id);
+
+                news.MiniInformation = model.MiniInformation;
+                news.Name = model.Name;
+                news.Url = model.Url;
+                news.Type = "status_ok";
+
+                switch (model.Rare)
+                {
+                    case 1: news.ShowsDays = 2; break;
+                    case 2: news.ShowsDays = 5; break;
+                    case 3: news.ShowsDays = 9; break;
+                    case 4: news.ShowsDays = 14; break;
+                }
+
+                news.Rare = model.Rare;
+
+                await _bankServices.UpdateNews(news);
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+            else
+            {
+                var news = await _bankServices.GetNews(model.Id);
+
+                await _bankServices.DeleteNews(model.Id);
+            }
+
+            return RedirectToAction("CheckNews", "Bank");
+
         }
 
         [HttpGet("add_news")]
@@ -243,7 +242,7 @@ namespace KeklandBankSystem.Controllers
         {
             if (ModelState.IsValid)
             {
-                var news = new News()
+                var news = new News
                 {
                     MiniInformation = model.MiniInformation,
                     Name = model.Name,
@@ -255,7 +254,8 @@ namespace KeklandBankSystem.Controllers
 
                 return RedirectToAction("Index", "Bank");
             }
-            else return View(model);
+
+            return View(model);
         }
 
         [HttpGet("org/{id}")]
@@ -268,7 +268,7 @@ namespace KeklandBankSystem.Controllers
 
                 items = items.Skip(Math.Max(0, items.Count() - 4)).ToList();
 
-                var model = new SingleOrganizationModel()
+                var model = new SingleOrganizationModel
                 {
                     GovermentPolitical = await _bankServices.GetGoverment(org.GovermentId),
                     LastUserItems = items,
@@ -277,7 +277,8 @@ namespace KeklandBankSystem.Controllers
 
                 return View(model);
             }
-            else return RedirectToAction("Error", "Bank", new { code = 404 });
+
+            return RedirectToAction("Error", "Bank", new { code = 404 });
         }
 
         [HttpGet("top")]
@@ -295,7 +296,8 @@ namespace KeklandBankSystem.Controllers
             {
                 return View();
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
 
         }
 
@@ -308,7 +310,8 @@ namespace KeklandBankSystem.Controllers
             {
                 return View();
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         public async Task<IActionResult> BuyCaseFinal()
@@ -337,7 +340,7 @@ namespace KeklandBankSystem.Controllers
                 await _bankServices.UpdateUser(user);
 
 
-                await _bankServices.CreateTransaction(new Transaction()
+                await _bankServices.CreateTransaction(new Transaction
                 {
                     Date = _bankServices.NowDateTime(),
                     Id1 = user.Id,
@@ -376,7 +379,8 @@ namespace KeklandBankSystem.Controllers
                 return Json(new { item = item, type = "ok" });
 
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         public T Random<T>(IEnumerable<T> enumerable)
@@ -405,7 +409,7 @@ namespace KeklandBankSystem.Controllers
             if (user == null && code == 1200)
                 return RedirectToAction("Error", "Bank", new { code = 404 });
 
-            var model = new ErrorModel()
+            var model = new ErrorModel
             {
                 ErrorCode = code
             };
@@ -424,7 +428,8 @@ namespace KeklandBankSystem.Controllers
             {
                 return View(new CreateOrganization());
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpGet("org/transfer_in/{id}")]
@@ -437,14 +442,15 @@ namespace KeklandBankSystem.Controllers
                 if (org.Status != "status_ok")
                     return RedirectToAction("Error", "Bank", new { code = 404 });
 
-                var model = new TransferOrganizationModel()
+                var model = new TransferOrganizationModel
                 {
                     orgId = id
                 };
 
                 return View(model);
             }
-            else return RedirectToAction("Error", "Bank", new { code = 404 });
+
+            return RedirectToAction("Error", "Bank", new { code = 404 });
         }
 
         [HttpGet("org/transfer_out/{id}")]
@@ -460,14 +466,15 @@ namespace KeklandBankSystem.Controllers
                 if (org.Status != "status_ok")
                     return RedirectToAction("Error", "Bank", new { code = 404 });
 
-                var model = new TransferOutOrganizationModel()
+                var model = new TransferOutOrganizationModel
                 {
                     orgId = id
                 };
 
                 return View(model);
             }
-            else return RedirectToAction("Error", "Bank", new { code = 404 });
+
+            return RedirectToAction("Error", "Bank", new { code = 404 });
         }
 
         [HttpPost("admin/editDeposit/{id}")]
@@ -489,10 +496,12 @@ namespace KeklandBankSystem.Controllers
 
                     return RedirectToAction("MyDeposit", "Bank", new { id = model.UserId });
                 }
-                else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+                return RedirectToAction("Error", "Bank", new { code = 700 });
 
             }
-            else return RedirectToAction("Error", "Bank", new { code = 404 });
+
+            return RedirectToAction("Error", "Bank", new { code = 404 });
 
         }
 
@@ -515,11 +524,14 @@ namespace KeklandBankSystem.Controllers
                     {
                         return View(Dep);
                     }
-                    else return RedirectToAction("Error", "Bank", new { code = 404 });
+
+                    return RedirectToAction("Error", "Bank", new { code = 404 });
                 }
-                else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+                return RedirectToAction("Error", "Bank", new { code = 700 });
             }
-            else return RedirectToAction("Error", "Bank", new { code = 404 });
+
+            return RedirectToAction("Error", "Bank", new { code = 404 });
         }
 
         [HttpPost("org/transfer_out/{id}")]
@@ -569,9 +581,9 @@ namespace KeklandBankSystem.Controllers
                         return View(model);
                     }
 
-                    await _bankServices.AddMoneyToGov(nalog);
+                    await _bankServices.AddMoneyToGov((int)nalog);
 
-                    var trans = new BankTransaction()
+                    var trans = new BankTransaction
                     {
                         Date = _bankServices.NowDateTime(),
                         BankId1 = orgIn.Id,
@@ -580,7 +592,7 @@ namespace KeklandBankSystem.Controllers
                         Value = model.Value
                     };
 
-                    var trans2 = new Transaction()
+                    var trans2 = new Transaction
                     {
                         Date = _bankServices.NowDateTime(),
                         Id1 = -1,
@@ -589,10 +601,10 @@ namespace KeklandBankSystem.Controllers
                         Text = "Выведено со счёта организации '" + orgIn.Name + "'"
                     };
 
-                    await _bankServices.SpentMoney(model.Value + nalog);
-                    await _bankServices.AddToRecdStat(nalog);
+                    await _bankServices.SpentMoney(model.Value + (int)nalog);
+                    await _bankServices.AddToRecdStat((int)nalog);
 
-                    orgIn.Balance -= model.Value + nalog;
+                    orgIn.Balance -= model.Value + (int)nalog;
                     userTo.Money += model.Value;
 
                     await _bankServices.UpdateOrganization(orgIn);
@@ -604,7 +616,8 @@ namespace KeklandBankSystem.Controllers
                     return RedirectToAction("SingleOrganization", "Bank", new { id = orgIn.Id });
 
                 }
-                else ModelState.AddModelError("", "Получателя с именем " + model.NameTo + " не существует.");
+
+                ModelState.AddModelError("", "Получателя с именем " + model.NameTo + " не существует.");
             }
             else return RedirectToAction("Error", "Bank", new { code = 700 });
 
@@ -625,7 +638,7 @@ namespace KeklandBankSystem.Controllers
                 {
                     var userAdmin = await _bankServices.FindByIdAsync(org.AdminId);
 
-                    var model = new EditOrganizationModel()
+                    var model = new EditOrganizationModel
                     {
                         AdminName = userAdmin.Name,
                         Short_Desc = org.Short_Desc,
@@ -644,9 +657,11 @@ namespace KeklandBankSystem.Controllers
                     return View(model);
 
                 }
-                else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+                return RedirectToAction("Error", "Bank", new { code = 700 });
             }
-            else return RedirectToAction("Error", "Bank", new { code = 404 });
+
+            return RedirectToAction("Error", "Bank", new { code = 404 });
         }
 
         [HttpGet("org/edit_orig_zam/{id}")]
@@ -664,7 +679,7 @@ namespace KeklandBankSystem.Controllers
                     var usr1 = await _bankServices.FindByIdAsync(org.Zam1Name);
                     var usr2 = await _bankServices.FindByIdAsync(org.Zam2Name);
 
-                    var model = new SetOrganizationZamModel()
+                    var model = new SetOrganizationZamModel
                     {
                         Id = id,
                         Zam1 = (usr1 == null ? "" : usr1.Name),
@@ -674,9 +689,11 @@ namespace KeklandBankSystem.Controllers
                     return View(model);
 
                 }
-                else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+                return RedirectToAction("Error", "Bank", new { code = 700 });
             }
-            else return RedirectToAction("Error", "Bank", new { code = 404 });
+
+            return RedirectToAction("Error", "Bank", new { code = 404 });
         }
 
         [HttpPost("org/edit_orig_zam/{id}")]
@@ -737,9 +754,11 @@ namespace KeklandBankSystem.Controllers
 
                     return RedirectToAction("SingleOrganization", "Bank", new { id = model.Id });
                 }
-                else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+                return RedirectToAction("Error", "Bank", new { code = 700 });
             }
-            else return RedirectToAction("Error", "Bank", new { code = 404 });
+
+            return RedirectToAction("Error", "Bank", new { code = 404 });
         }
 
         [HttpGet("org/del_org/{id}")]
@@ -757,9 +776,11 @@ namespace KeklandBankSystem.Controllers
                 {
                     return View(org);
                 }
-                else return RedirectToAction("Error", "Bank", new { code = 404 });
+
+                return RedirectToAction("Error", "Bank", new { code = 404 });
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpPost("org/del_org/{id}")]
@@ -775,11 +796,13 @@ namespace KeklandBankSystem.Controllers
                 {
                     await _bankServices.DeleteOrganization(org);
 
-                    return RedirectToAction("Inde", "Bank");
+                    return RedirectToAction("Index", "Bank");
                 }
-                else return RedirectToAction("Error", "Bank", new { code = 404 });
+
+                return RedirectToAction("Error", "Bank", new { code = 404 });
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpPost("org/edit_orig/{id}")]
@@ -857,9 +880,11 @@ namespace KeklandBankSystem.Controllers
                     return RedirectToAction("SingleOrganization", "Bank", new { id = org.Id });
 
                 }
-                else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+                return RedirectToAction("Error", "Bank", new { code = 700 });
             }
-            else return RedirectToAction("Error", "Bank", new { code = 404 });
+
+            return RedirectToAction("Error", "Bank", new { code = 404 });
         }
 
         /*[HttpGet("faq")]
@@ -893,9 +918,11 @@ namespace KeklandBankSystem.Controllers
                 {
                     return View(org.Id);
                 }
-                else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+                return RedirectToAction("Error", "Bank", new { code = 700 });
             }
-            else return RedirectToAction("Error", "Bank", new { code = 404 });
+
+            return RedirectToAction("Error", "Bank", new { code = 404 });
         }
 
         [HttpPost("org/toggleOrg/{id}")]
@@ -921,9 +948,11 @@ namespace KeklandBankSystem.Controllers
 
                     return RedirectToAction("SingleOrganization", "Bank", new { id = org.Id });
                 }
-                else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+                return RedirectToAction("Error", "Bank", new { code = 700 });
             }
-            else return RedirectToAction("Error", "Bank", new { code = 404 });
+
+            return RedirectToAction("Error", "Bank", new { code = 404 });
         }
 
         [HttpGet("org/creategovorg/{id}")]
@@ -938,14 +967,16 @@ namespace KeklandBankSystem.Controllers
             {
                 if (gov.LeaderId == user.Id || perm.CreateOrganization)
                 {
-                    return View(new CreateOrganizationGov()
+                    return View(new CreateOrganizationGov
                     {
                         GovermentId = id
                     });
                 }
-                else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+                return RedirectToAction("Error", "Bank", new { code = 700 });
             }
-            else return RedirectToAction("Error", "Bank", new { code = 404 });
+
+            return RedirectToAction("Error", "Bank", new { code = 404 });
         }
 
         [HttpPost("org/creategovorg/{id}")]
@@ -966,7 +997,7 @@ namespace KeklandBankSystem.Controllers
                         return View(model);
                     }
 
-                    var org = new Organization()
+                    var org = new Organization
                     {
                         AdminId = user.Id,
                         Balance = 0,
@@ -1016,9 +1047,11 @@ namespace KeklandBankSystem.Controllers
 
                     return RedirectToAction("SingleOrganization", "Bank", new { id = org.Id });
                 }
-                else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+                return RedirectToAction("Error", "Bank", new { code = 700 });
             }
-            else return RedirectToAction("Error", "Bank", new { code = 404 });
+
+            return RedirectToAction("Error", "Bank", new { code = 404 });
         }
 
         [HttpPost("org/addUserToJob/{id}/{orgId}")]
@@ -1048,7 +1081,7 @@ namespace KeklandBankSystem.Controllers
                         return View(model);
                     }
 
-                    var a = new OrgJobUser()
+                    var a = new OrgJobUser
                     {
                         UserId = user.Id,
                         OrgJobId = model.orgJob.Id
@@ -1058,12 +1091,12 @@ namespace KeklandBankSystem.Controllers
 
                     return RedirectToAction("JobList", "Bank", new { id = orgId });
                 }
-                else
-                {
-                    ModelState.AddModelError("", "Пользователей с ником '" + model.Name + "' не найдено.");
-                    return View(model);
-                }
-            } else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+                ModelState.AddModelError("", "Пользователей с ником '" + model.Name + "' не найдено.");
+                return View(model);
+            }
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpGet("org/addUserToJob/{id}/{orgId}")]
@@ -1077,14 +1110,15 @@ namespace KeklandBankSystem.Controllers
 
             if (user.Id == org.AdminId || perm.JobSettings || user.Id == org.Zam1Name || user.Id == org.Zam2Name)
             {
-                var model = new AddUserToJob()
+                var model = new AddUserToJob
                 {
                     orgJob = job
                 };
 
                 return View(model);
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpGet("org/edit_job/{id}")]
@@ -1101,7 +1135,8 @@ namespace KeklandBankSystem.Controllers
             {
                 return View(job);
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpPost("org/edit_job/{id}")]
@@ -1130,7 +1165,8 @@ namespace KeklandBankSystem.Controllers
 
                 return RedirectToAction("JobList", "Bank", new { id = model.OrganizationId });
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpGet("org/create_job/{id}")]
@@ -1145,7 +1181,8 @@ namespace KeklandBankSystem.Controllers
             {
                 return View();
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpGet("org/delete_orgJobuserWarning/{id}/{orgJobId}/{userId}")]
@@ -1160,7 +1197,7 @@ namespace KeklandBankSystem.Controllers
 
             if (view.Id == org.AdminId || perm.JobSettings || user.Id == org.Zam1Name || user.Id == org.Zam2Name)
             {
-                var model = new DeleteUserJobAlertModel()
+                var model = new DeleteUserJobAlertModel
                 {
                     OrganizationId = org.Id,
                     OrganizationJobId = orgJob.Id,
@@ -1169,7 +1206,8 @@ namespace KeklandBankSystem.Controllers
 
                 return View(model);
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpGet("adm/create_project")]
@@ -1182,7 +1220,8 @@ namespace KeklandBankSystem.Controllers
             {
                 return View();
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpGet("project/{id}")]
@@ -1194,7 +1233,8 @@ namespace KeklandBankSystem.Controllers
             {
                 return View(project);
             }
-            else return RedirectToAction("Error", "Bank", new { code = 404 });
+
+            return RedirectToAction("Error", "Bank", new { code = 404 });
         }
 
         [HttpGet("project_send/{id}")]
@@ -1209,14 +1249,15 @@ namespace KeklandBankSystem.Controllers
 
             if (project != null)
             {
-                var model = new SendMoneyProjectModel()
+                var model = new SendMoneyProjectModel
                 {
                     ProjectId = id
                 };
 
                 return View(model);
             }
-            else return RedirectToAction("Error", "Bank", new { code = 404 });
+
+            return RedirectToAction("Error", "Bank", new { code = 404 });
         }
 
         [HttpGet("admin/deletetransaction/{transId}")]
@@ -1322,7 +1363,7 @@ namespace KeklandBankSystem.Controllers
 
                         if (win >= sum * 2.5)
                         {
-                            await _bankServices.CreateWinner(new CasinoWin()
+                            await _bankServices.CreateWinner(new CasinoWin
                             {
                                 Count = win,
                                 Date = _bankServices.NowDateTime(),
@@ -1332,16 +1373,15 @@ namespace KeklandBankSystem.Controllers
 
                         return Json(new { type = "win", message = "Выпало: " + exhange, coins = user.Coins });
                     }
-                    else
-                    {
-                        user.Coins -= sum;
 
-                        await _bankServices.UpdateUser(user);
+                    user.Coins -= sum;
 
-                        return Json(new { type = "nowin", message = "Выпало: " + exhange, coins = user.Coins });
-                    }
+                    await _bankServices.UpdateUser(user);
+
+                    return Json(new { type = "nowin", message = "Выпало: " + exhange, coins = user.Coins });
                 }
-                else return Json(new { type = "error", message = "Непредвиденная ошибка" });
+
+                return Json(new { type = "error", message = "Непредвиденная ошибка" });
             }
             catch
             {
@@ -1389,9 +1429,11 @@ namespace KeklandBankSystem.Controllers
 
                     return View(new AllUserTrans { id = id, list = list });
                 }
-                else return RedirectToAction("Error", "Bank", new { code = 404 });
+
+                return RedirectToAction("Error", "Bank", new { code = 404 });
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpGet("admin/allTransactionOrg/{id}")]
@@ -1410,9 +1452,11 @@ namespace KeklandBankSystem.Controllers
 
                     return View(new AllOrgTrans { id = id, list = list });
                 }
-                else return RedirectToAction("Error", "Bank", new { code = 404 });
+
+                return RedirectToAction("Error", "Bank", new { code = 404 });
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpGet("casino/indraw")]
@@ -1424,7 +1468,8 @@ namespace KeklandBankSystem.Controllers
             {
                 return View(new WithDrawCasino());
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpPost("casino/indraw")]
@@ -1470,7 +1515,7 @@ namespace KeklandBankSystem.Controllers
 
                 await _bankServices.UpdateUser(user);
 
-                await _bankServices.CreateTransaction(new Transaction()
+                await _bankServices.CreateTransaction(new Transaction
                 {
                     Date = _bankServices.NowDateTime(),
                     Id2 = -1,
@@ -1481,7 +1526,7 @@ namespace KeklandBankSystem.Controllers
 
                 var org = await _bankServices.GetOrganizations("casino");
 
-                await _bankServices.CreateBankTransaction(new BankTransaction()
+                await _bankServices.CreateBankTransaction(new BankTransaction
                 {
                     BankId2 = org.Id,
                     Id1 = user.Id,
@@ -1496,7 +1541,8 @@ namespace KeklandBankSystem.Controllers
 
                 return RedirectToAction("CasinoMinMax", "Bank");
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
 
@@ -1509,7 +1555,8 @@ namespace KeklandBankSystem.Controllers
             {
                 return View(new WithDrawCasino());
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpPost("casino/withdraw")]
@@ -1548,7 +1595,7 @@ namespace KeklandBankSystem.Controllers
 
                 await _bankServices.UpdateUser(user);
 
-                await _bankServices.CreateTransaction(new Transaction()
+                await _bankServices.CreateTransaction(new Transaction
                 {
                     Date = _bankServices.NowDateTime(),
                     Id1 = -1,
@@ -1557,7 +1604,7 @@ namespace KeklandBankSystem.Controllers
                     Value = money
                 });
 
-                await _bankServices.CreateBankTransaction(new BankTransaction()
+                await _bankServices.CreateBankTransaction(new BankTransaction
                 {
                     Id2 = user.Id,
                     BankId1 = org.Id,
@@ -1572,7 +1619,8 @@ namespace KeklandBankSystem.Controllers
 
                 return RedirectToAction("CasinoMinMax", "Bank");
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpGet("casino/minmax")]
@@ -1584,7 +1632,8 @@ namespace KeklandBankSystem.Controllers
             {
                 return View(user);
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpPost("project_send/{id}")]
@@ -1614,7 +1663,7 @@ namespace KeklandBankSystem.Controllers
             user.Money -= money;
             await _bankServices.SpentMoney(money);
 
-            await _bankServices.CreateTransaction(new Transaction()
+            await _bankServices.CreateTransaction(new Transaction
             {
                 Date = _bankServices.NowDateTime(),
                 Id1 = user.Id,
@@ -1623,7 +1672,7 @@ namespace KeklandBankSystem.Controllers
                 Value = money
             });
 
-            await _bankServices.CreateProjectSender(new ProjectSender()
+            await _bankServices.CreateProjectSender(new ProjectSender
             {
                 Date = _bankServices.NowDateTime(),
                 Money = money,
@@ -1646,7 +1695,7 @@ namespace KeklandBankSystem.Controllers
 
                 author.Money += moneyUser;
 
-                await _bankServices.CreateTransaction(new Transaction()
+                await _bankServices.CreateTransaction(new Transaction
                 {
                     Date = _bankServices.NowDateTime(),
                     Id1 = -1,
@@ -1659,7 +1708,7 @@ namespace KeklandBankSystem.Controllers
 
                 org.Balance += moneyOrg;
 
-                await _bankServices.CreateBankTransaction(new BankTransaction()
+                await _bankServices.CreateBankTransaction(new BankTransaction
                 {
                     Id1 = -1,
                     BankId2 = org.Id,
@@ -1699,7 +1748,7 @@ namespace KeklandBankSystem.Controllers
                 return View(model);
             }
 
-            var project = new Infrastructure.Project()
+            var project = new Infrastructure.Project
             {
                 AuthorId = user.Id,
                 Balance = 0,
@@ -1759,7 +1808,8 @@ namespace KeklandBankSystem.Controllers
 
                 return RedirectToAction("JobList", "Bank", new { id = model.OrganizationId });
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpPost("org/delete_orgJob/{id}")]
@@ -1778,7 +1828,8 @@ namespace KeklandBankSystem.Controllers
 
                 return RedirectToAction("JobList", "Bank", new { id = orgJob.OrganizationId });
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpPost("org/create_job/{id}")]
@@ -1793,7 +1844,7 @@ namespace KeklandBankSystem.Controllers
             if (user.Id == org.AdminId || perm.JobSettings || user.Id == org.Zam1Name || user.Id == org.Zam2Name)
             {
 
-                var orgjob = new OrgJob()
+                var orgjob = new OrgJob
                 {
                     Name = model.Name,
                     OrganizationId = org.Id,
@@ -1804,7 +1855,8 @@ namespace KeklandBankSystem.Controllers
 
                 return RedirectToAction("JobList", "Bank", new { id = id });
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpGet("org/job_list/{id}")]
@@ -1819,7 +1871,7 @@ namespace KeklandBankSystem.Controllers
             {
                 var list = await _bankServices.GetOrganizationJob(org);
 
-                var model = new JobModel()
+                var model = new JobModel
                 {
                     orgJobs = list,
                     id = id
@@ -1827,7 +1879,8 @@ namespace KeklandBankSystem.Controllers
 
                 return View(model);
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpPost("org/create_buy")]
@@ -1847,7 +1900,7 @@ namespace KeklandBankSystem.Controllers
 
             if (user.Money > price)
             {
-                var org = new Organization()
+                var org = new Organization
                 {
                     AdminId = user.Id,
                     Balance = 0,
@@ -1894,7 +1947,7 @@ namespace KeklandBankSystem.Controllers
 
                 await _bankServices.AddToRecdStat(price);
 
-                var ticket = new Transaction()
+                var ticket = new Transaction
                 {
                     Date = _bankServices.NowDateTime(),
                     Id1 = user.Id,
@@ -1909,11 +1962,9 @@ namespace KeklandBankSystem.Controllers
 
                 return RedirectToAction("SingleOrganization", "Bank", new { id = org.Id });
             }
-            else
-            {
-                ModelState.AddModelError("", "Недостаточно средств.");
-                return View(model);
-            }
+
+            ModelState.AddModelError("", "Недостаточно средств.");
+            return View(model);
         }
 
         [HttpGet("last_trans")]
@@ -1958,9 +2009,9 @@ namespace KeklandBankSystem.Controllers
 
             if (orgTo != null)
             {
-                await _bankServices.AddMoneyToGov(nalog);
+                await _bankServices.AddMoneyToGov((int)nalog);
 
-                var trans = new BankTransaction()
+                var trans = new BankTransaction
                 {
                     Date = _bankServices.NowDateTime(),
                     Id1 = userIn.Id,
@@ -1975,7 +2026,7 @@ namespace KeklandBankSystem.Controllers
                     await _bankServices.AddToRecdStat(model.Value);
                 }
 
-                var trans2 = new Transaction()
+                var trans2 = new Transaction
                 {
                     Date = _bankServices.NowDateTime(),
                     Id1 = userIn.Id,
@@ -1984,10 +2035,10 @@ namespace KeklandBankSystem.Controllers
                     Text = "Зачислено на счёт организации '" + orgTo.Name + "'"
                 };
 
-                await _bankServices.AddToRecdStat(nalog);
+                await _bankServices.AddToRecdStat((int)nalog);
 
-                userIn.Money -= model.Value + nalog;
-                await _bankServices.SpentMoney(model.Value + nalog);
+                userIn.Money -= model.Value + (int)nalog;
+                await _bankServices.SpentMoney(model.Value + (int)nalog);
                 orgTo.Balance += model.Value;
 
                 await _bankServices.UpdateOrganization(orgTo);
@@ -2032,7 +2083,7 @@ namespace KeklandBankSystem.Controllers
                     status = "status_off";
                 }
 
-                var org = new Organization()
+                var org = new Organization
                 {
                     AdminId = admin.Id,
                     Balance = 0,
@@ -2078,7 +2129,8 @@ namespace KeklandBankSystem.Controllers
 
                 return RedirectToAction("SingleOrganization", "Bank", new { id = org.Id });
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpGet("user/transfer")]
@@ -2111,9 +2163,11 @@ namespace KeklandBankSystem.Controllers
                     var list = _bankServices.GetTickets(user, 10);
                     return View(list);
                 }
-                else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+                return RedirectToAction("Error", "Bank", new { code = 700 });
             }
-            else return RedirectToAction("Error", "Bank", new { code = 404 });
+
+            return RedirectToAction("Error", "Bank", new { code = 404 });
         }
 
         [HttpGet("admin/edit_user/{id}")]
@@ -2126,7 +2180,7 @@ namespace KeklandBankSystem.Controllers
             var role = await _bankServices.GetUserRoleEntity(user);
             if (perm.ChangeUserEconomy || perm.ChangeUserInfo)
             {
-                var model = new EditUserModel()
+                var model = new EditUserModel
                 {
                     PremiumDay = user.PremiumDay,
                     IsArrested = user.IsArrested,
@@ -2137,7 +2191,8 @@ namespace KeklandBankSystem.Controllers
 
                 return View(model);
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpPost("admin/edit_user/{id}")]
@@ -2193,7 +2248,8 @@ namespace KeklandBankSystem.Controllers
 
                 return RedirectToAction("Balance", "Bank", new { id = userUpdate.Id });
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpGet("admin/president_panel/")]
@@ -2209,7 +2265,8 @@ namespace KeklandBankSystem.Controllers
             {
                 return View(goverment);
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpPost("admin/president_panel/")]
@@ -2253,7 +2310,8 @@ namespace KeklandBankSystem.Controllers
 
                 return RedirectToAction("SingleOrganization", "Bank", new { id = 4 });
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpGet("user/deposit/{id}")]
@@ -2269,9 +2327,9 @@ namespace KeklandBankSystem.Controllers
 
                 if (dep == null)
                 {
-                    model = new UserDepositModel()
+                    model = new UserDepositModel
                     {
-                        dep = new Deposit()
+                        dep = new Deposit
                         {
                             Money = 0
                         },
@@ -2280,7 +2338,7 @@ namespace KeklandBankSystem.Controllers
                 }
                 else
                 {
-                    model = new UserDepositModel()
+                    model = new UserDepositModel
                     {
                         dep = dep,
                         user = user
@@ -2289,7 +2347,8 @@ namespace KeklandBankSystem.Controllers
 
                 return View(model);
             }
-            else return RedirectToAction("Error", "Bank", new { code = 404 });
+
+            return RedirectToAction("Error", "Bank", new { code = 404 });
         }
 
         [HttpGet("user/removeDeposit")]
@@ -2322,7 +2381,8 @@ namespace KeklandBankSystem.Controllers
             {
                 return View(new CreateGoverment());
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpPost("admin/create_gov")]
@@ -2355,7 +2415,7 @@ namespace KeklandBankSystem.Controllers
 
                     await _bankServices.CreateOrganization(mainOrg);
 
-                    var gov = new GovermentPolitical()
+                    var gov = new GovermentPolitical
                     {
                         FreeOrganizationCreateCount = 15,
                         Name = model.GovermentName,
@@ -2384,7 +2444,7 @@ namespace KeklandBankSystem.Controllers
                     mainOrg.Status = "status_ok";
                     mainOrg.Balance = model.Budget;
 
-                    await _bankServices.CreateBankTransaction(new BankTransaction()
+                    await _bankServices.CreateBankTransaction(new BankTransaction
                     {
                         Date = _bankServices.NowDateTime(),
                         Id1 = -1,
@@ -2397,13 +2457,12 @@ namespace KeklandBankSystem.Controllers
 
                     return RedirectToAction("SingleGoverment", "Bank", new { id = gov.Id });
                 }
-                else
-                {
-                    ModelState.AddModelError("", "Пользователя с именем '" + model.AdminName + "' не существует.");
-                    return View(model);
-                }
+
+                ModelState.AddModelError("", "Пользователя с именем '" + model.AdminName + "' не существует.");
+                return View(model);
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpGet("gov/getNalog/{id}")]
@@ -2417,7 +2476,8 @@ namespace KeklandBankSystem.Controllers
             {
                 return View(gov);
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpPost("gov/getNalog/{id}")]
@@ -2450,7 +2510,7 @@ namespace KeklandBankSystem.Controllers
 
                             await _bankServices.UpdateOrganization(s);
 
-                            await _bankServices.CreateBankTransaction(new BankTransaction()
+                            await _bankServices.CreateBankTransaction(new BankTransaction
                             {
                                 Date = _bankServices.NowDateTime(),
                                 BankId1 = s.Id,
@@ -2464,7 +2524,7 @@ namespace KeklandBankSystem.Controllers
                     gov.DaysGovermentTaxes = 3;
 
                     await _bankServices.UpdateOrganization(mainOrg);
-                    await _bankServices.CreateBankTransaction(new BankTransaction()
+                    await _bankServices.CreateBankTransaction(new BankTransaction
                     {
                         Date = _bankServices.NowDateTime(),
                         Id1 = -1,
@@ -2477,13 +2537,12 @@ namespace KeklandBankSystem.Controllers
 
                     return RedirectToAction("SingleGoverment", "Bank", new { id = gov.Id });
                 }
-                else
-                {
-                    ModelState.AddModelError("", "Вы не можете взымать налог, пока не пройдет дней: " + gov.DaysGovermentTaxes);
-                    return View(gov);
-                }
+
+                ModelState.AddModelError("", "Вы не можете взымать налог, пока не пройдет дней: " + gov.DaysGovermentTaxes);
+                return View(gov);
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpGet("editGov/{id}")]
@@ -2498,7 +2557,7 @@ namespace KeklandBankSystem.Controllers
             {
                 var leaderAdminGov = await _bankServices.FindByIdAsync(gov.LeaderId);
 
-                var model = new EditGovermentPolitical()
+                var model = new EditGovermentPolitical
                 {
                     FreeOrganizationCreateCount = gov.FreeOrganizationCreateCount,
                     Id = gov.Id,
@@ -2511,7 +2570,8 @@ namespace KeklandBankSystem.Controllers
 
                 return View(model);
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpPost("editGov/{id}")]
@@ -2593,21 +2653,19 @@ namespace KeklandBankSystem.Controllers
 
                             return RedirectToAction("SingleGoverment", "Bank", new { id = gov.Id });
                         }
-                        else
-                        {
-                            ModelState.AddModelError("", "Максимальное количество число налога: 30.");
-                            return View(model);
-                        }
-                    }
-                    else
-                    {
-                        ModelState.AddModelError("", "Имя '" + model.LeaderName + "' не существует.");
+
+                        ModelState.AddModelError("", "Максимальное количество число налога: 30.");
                         return View(model);
                     }
+
+                    ModelState.AddModelError("", "Имя '" + model.LeaderName + "' не существует.");
+                    return View(model);
                 }
-                else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+                return RedirectToAction("Error", "Bank", new { code = 700 });
             }
-            else return View(model);
+
+            return View(model);
         }
 
         [HttpGet("gov/{id}")]
@@ -2621,7 +2679,7 @@ namespace KeklandBankSystem.Controllers
                 {
                     var orgs = await _bankServices.GetGovermentOrganization(id);
 
-                    var model = new SingleGov()
+                    var model = new SingleGov
                     {
                         GovermentPolitical = gov,
                         OrganizationsList = orgs.OrderByDescending(m => m.Balance).ToList()
@@ -2629,9 +2687,11 @@ namespace KeklandBankSystem.Controllers
 
                     return View(model);
                 }
-                else return RedirectToAction("Error", "Bank", new { code = 400 });
+
+                return RedirectToAction("Error", "Bank", new { code = 400 });
             }
-            else return RedirectToAction("Error", "Bank", new { code = 404 });
+
+            return RedirectToAction("Error", "Bank", new { code = 404 });
         }
 
 
@@ -2670,7 +2730,7 @@ namespace KeklandBankSystem.Controllers
 
             await _bankServices.UpdateUser(user);
 
-            await _bankServices.CreateTransaction(new Transaction()
+            await _bankServices.CreateTransaction(new Transaction
             {
                 Date = _bankServices.NowDateTime(),
                 Id1 = -2,
@@ -2698,7 +2758,7 @@ namespace KeklandBankSystem.Controllers
 
                 if(item != null)
                 {
-                    return View(new ArticlesModel()
+                    return View(new ArticlesModel
                     {
                         HtmlText = item.HtmlText,
                         MiniText = item.MiniText
@@ -2706,7 +2766,8 @@ namespace KeklandBankSystem.Controllers
                 }
                 return RedirectToAction("Error", "Bank", new { id = 404 });
             }
-            else return RedirectToAction("Error", "Bank", new { id = 700 });
+
+            return RedirectToAction("Error", "Bank", new { id = 700 });
         }
 
         [HttpPost("admin/updateArticle/{id}")]
@@ -2749,7 +2810,8 @@ namespace KeklandBankSystem.Controllers
                 await _bankServices.UpdateArticles(item);
                 return RedirectToAction("SingleArticle", "Bank", new { id = id });
             }
-            else return RedirectToAction("Error", "Bank", new { id = 700 });
+
+            return RedirectToAction("Error", "Bank", new { id = 700 });
         }
 
         [HttpPost("user/addDeposit")]
@@ -2782,7 +2844,7 @@ namespace KeklandBankSystem.Controllers
 
             await _bankServices.UpdateUser(user);
 
-            await _bankServices.CreateTransaction(new Transaction()
+            await _bankServices.CreateTransaction(new Transaction
             {
                 Date = _bankServices.NowDateTime(),
                 Id1 = user.Id,
@@ -2795,7 +2857,7 @@ namespace KeklandBankSystem.Controllers
 
             if (dep == null)
             {
-                await _bankServices.CreateDeposit(new Deposit()
+                await _bankServices.CreateDeposit(new Deposit
                 {
                     Money = model.Col,
                     UserId = user.Id
@@ -2830,13 +2892,16 @@ namespace KeklandBankSystem.Controllers
             {
                 if (perm.ChangeOrganizationEconomy || org.AdminId == user.Id || org.Zam1Name == user.Id || org.Zam2Name == user.Id)
                 {
-                    return View(new TransferOrgToOrgModel() {
+                    return View(new TransferOrgToOrgModel
+                    {
                         orgId = org.Id
                     });
                 }
-                else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+                return RedirectToAction("Error", "Bank", new { code = 700 });
             }
-            else return RedirectToAction("Error", "Bank", new { code = 404 });
+
+            return RedirectToAction("Error", "Bank", new { code = 404 });
         }
 
         [HttpPost("user/sendOrgToOrg/{id}")]
@@ -2866,7 +2931,7 @@ namespace KeklandBankSystem.Controllers
                         org.Balance -= model.Count;
                         search.Balance += model.Count;
 
-                        await _bankServices.CreateBankTransaction(new BankTransaction()
+                        await _bankServices.CreateBankTransaction(new BankTransaction
                         {
                             Date = _bankServices.NowDateTime(),
                             BankId1 = org.Id,
@@ -2875,7 +2940,7 @@ namespace KeklandBankSystem.Controllers
                             Value = model.Count
                         });
 
-                        await _bankServices.CreateBankTransaction(new BankTransaction()
+                        await _bankServices.CreateBankTransaction(new BankTransaction
                         {
                             Date = _bankServices.NowDateTime(),
                             BankId2 = search.Id,
@@ -2887,15 +2952,15 @@ namespace KeklandBankSystem.Controllers
                         return RedirectToAction("SingleOrganization", "Bank", new { id = org.Id });
 
                     }
-                    else
-                    {
-                        ModelState.AddModelError("", "Неверное число.");
-                        return View(model);
-                    }
+
+                    ModelState.AddModelError("", "Неверное число.");
+                    return View(model);
                 }
-                else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+                return RedirectToAction("Error", "Bank", new { code = 700 });
             }
-            else return RedirectToAction("Error", "Bank", new { code = 404 });
+
+            return RedirectToAction("Error", "Bank", new { code = 404 });
         }
 
 
@@ -2910,7 +2975,8 @@ namespace KeklandBankSystem.Controllers
             {
                 return View(new CreateTicketModel());
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpPost("upload_image_ckeditor")]
@@ -2951,17 +3017,15 @@ namespace KeklandBankSystem.Controllers
                     url = img.ScreePath
                 });
             }
-            else
+
+            return Json(new
             {
-                return Json(new
+                uploaded = 0,
+                error = new
                 {
-                    uploaded = 0,
-                    error = new
-                    {
-                        message = "Ошибка сервера."
-                    }
-                });
-            }
+                    message = "Ошибка сервера."
+                }
+            });
         }
 
 
@@ -2980,7 +3044,7 @@ namespace KeklandBankSystem.Controllers
                 }
 
 
-                var ticket = new Ticket()
+                var ticket = new Ticket
                 {
                     Status = "status_timing",
                     Text = model.Text,
@@ -3042,7 +3106,8 @@ namespace KeklandBankSystem.Controllers
             {
                 return View();
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpGet("admin/check_item_tickets")]
@@ -3056,12 +3121,12 @@ namespace KeklandBankSystem.Controllers
                 var ticket = await _bankServices.GetAllItems();
                 ticket = ticket.Where(m => m.isActived == false).ToList();
 
-                var model = new CheckItemTicketModel() { };
+                var model = new CheckItemTicketModel { };
 
                 if (ticket.Count > 0)
                 {
 
-                    model = new CheckItemTicketModel()
+                    model = new CheckItemTicketModel
                     {
                         Col = ticket.Count(),
                         shopItem = ticket.Last()
@@ -3069,7 +3134,7 @@ namespace KeklandBankSystem.Controllers
                 }
                 else
                 {
-                    model = new CheckItemTicketModel()
+                    model = new CheckItemTicketModel
                     {
                         Col = ticket.Count(),
                         shopItem = null
@@ -3078,7 +3143,8 @@ namespace KeklandBankSystem.Controllers
 
                 return View(model);
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpPost("admin/check_item_tickets")]
@@ -3116,7 +3182,7 @@ namespace KeklandBankSystem.Controllers
                     org.Balance -= item.Value * item.CreateNum;
                     await _bankServices.UpdateOrganization(org);
 
-                    await _bankServices.CreateBankTransaction(new BankTransaction()
+                    await _bankServices.CreateBankTransaction(new BankTransaction
                     {
                         Date = _bankServices.NowDateTime(),
                         BankId1 = org.Id,
@@ -3131,7 +3197,7 @@ namespace KeklandBankSystem.Controllers
 
                     await _bankServices.UpdateUser(find);
 
-                    await _bankServices.CreateEntityTicket(new EntityTicketInformation()
+                    await _bankServices.CreateEntityTicket(new EntityTicketInformation
                     {
                         Date = _bankServices.NowDateTime(),
                         Status = "status_ok",
@@ -3153,7 +3219,7 @@ namespace KeklandBankSystem.Controllers
 
                     await _bankServices.UpdateUser(find);
 
-                    await _bankServices.CreateEntityTicket(new EntityTicketInformation()
+                    await _bankServices.CreateEntityTicket(new EntityTicketInformation
                     {
                         Date = _bankServices.NowDateTime(),
                         Status = "status_declaim",
@@ -3167,7 +3233,8 @@ namespace KeklandBankSystem.Controllers
 
                 return RedirectToAction("CheckItemTickets", "Bank");
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpGet("admin/check_tickets")]
@@ -3181,7 +3248,7 @@ namespace KeklandBankSystem.Controllers
             {
                 var ticket = await _bankServices.GetLastTicket();
 
-                var model = new CheckTicketModel() { };
+                var model = new CheckTicketModel { };
 
                 if (ticket != null)
                 {
@@ -3206,7 +3273,8 @@ namespace KeklandBankSystem.Controllers
 
                 return View(model);
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpPost("admin/check_tickets")]
@@ -3249,7 +3317,7 @@ namespace KeklandBankSystem.Controllers
                                 org.Balance -= model.ticket.Value;
                                 await _bankServices.SpentMoney(model.ticket.Value);
 
-                                await _bankServices.CreateBankTransaction(new BankTransaction()
+                                await _bankServices.CreateBankTransaction(new BankTransaction
                                 {
                                     BankId1 = org.Id,
                                     Id2 = model.ticket.UserId,
@@ -3268,7 +3336,7 @@ namespace KeklandBankSystem.Controllers
 
                             await _bankServices.UpdateUser(userTicket);
 
-                            await _bankServices.CreateTransaction(new Transaction()
+                            await _bankServices.CreateTransaction(new Transaction
                             {
                                 Date = _bankServices.NowDateTime(),
                                 Id1 = -1,
@@ -3293,7 +3361,7 @@ namespace KeklandBankSystem.Controllers
 
                                 org.Balance -= model.ticket.Value;
 
-                                await _bankServices.CreateBankTransaction(new BankTransaction()
+                                await _bankServices.CreateBankTransaction(new BankTransaction
                                 {
                                     BankId1 = org.Id,
                                     Id2 = model.ticket.UserId,
@@ -3312,7 +3380,7 @@ namespace KeklandBankSystem.Controllers
 
                             await _bankServices.UpdateUser(userTicket);
 
-                            await _bankServices.CreateTransaction(new Transaction()
+                            await _bankServices.CreateTransaction(new Transaction
                             {
                                 Date = _bankServices.NowDateTime(),
                                 Id1 = -1,
@@ -3341,7 +3409,8 @@ namespace KeklandBankSystem.Controllers
                 }
                 return RedirectToAction("CheckTickets", "Bank");
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
 
@@ -3393,9 +3462,9 @@ namespace KeklandBankSystem.Controllers
                     return View(model);
                 }
 
-                await _bankServices.AddMoneyToGov(nalog);
+                await _bankServices.AddMoneyToGov((int)nalog);
 
-                var trans = new Transaction()
+                var trans = new Transaction
                 {
                     Date = _bankServices.NowDateTime(),
                     Id1 = userIn.Id,
@@ -3405,12 +3474,12 @@ namespace KeklandBankSystem.Controllers
                 };
 
 
-                userIn.Money -= model.Value + nalog;
+                userIn.Money -= model.Value + (int)nalog;
                 userTo.Money += model.Value;
 
-                await _bankServices.SpentMoney(model.Value + nalog);
+                await _bankServices.SpentMoney(model.Value + (int)nalog);
 
-                await _bankServices.AddToRecdStat(nalog);
+                await _bankServices.AddToRecdStat((int)nalog);
 
                 await _bankServices.UpdateUser(userTo);
                 await _bankServices.UpdateUser(userIn);
@@ -3419,7 +3488,8 @@ namespace KeklandBankSystem.Controllers
 
                 return RedirectToAction("TransferComplete", "Bank");
             }
-            else ModelState.AddModelError("", "Получателя с именем " + model.NameTo + " не существует.");
+
+            ModelState.AddModelError("", "Получателя с именем " + model.NameTo + " не существует.");
 
             return View(model);
         }
@@ -3445,7 +3515,7 @@ namespace KeklandBankSystem.Controllers
 
                 var list = _bankServices.GetTransactions(user, 10);
 
-                var model = new BalanceModel()
+                var model = new BalanceModel
                 {
                     user = user,
                     TransList = list
@@ -3453,7 +3523,8 @@ namespace KeklandBankSystem.Controllers
 
                 return View(model);
             }
-            else return RedirectToAction("Error", "Bank", new { code = 404 });
+
+            return RedirectToAction("Error", "Bank", new { code = 404 });
         }
 
         [HttpGet("editItem/{id}")]
@@ -3466,7 +3537,7 @@ namespace KeklandBankSystem.Controllers
             if (perm.EditItem)
                 return View(item);
 
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpPost("editItem/{id}")]
@@ -3499,7 +3570,8 @@ namespace KeklandBankSystem.Controllers
 
                 return RedirectToAction("AllItems", "Bank");
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpGet("createItemComplete")]
@@ -3519,7 +3591,7 @@ namespace KeklandBankSystem.Controllers
 
             if (perm.CreateItemOrg || user.Id == org.AdminId || user.Id == org.Zam2Name || user.Id == org.Zam1Name)
             {
-                var item = new ShopItem()
+                var item = new ShopItem
                 {
                     Price = model.Price,
                     Short_Desc = model.Short_Desc,
@@ -3570,7 +3642,8 @@ namespace KeklandBankSystem.Controllers
 
                 return RedirectToAction("CreateItemComplete", "Bank");
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpGet("admin/create_lot/{id}")]
@@ -3584,14 +3657,15 @@ namespace KeklandBankSystem.Controllers
 
             if (perm.CreateItemOrg || org.AdminId == user.Id || user.Id == org.Zam2Name || user.Id == org.Zam1Name)
             {
-                var model = new CreateItemModel()
+                var model = new CreateItemModel
                 {
                     Id = id
                 };
 
                 return View(model);
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpGet("user/login")]
@@ -3601,8 +3675,7 @@ namespace KeklandBankSystem.Controllers
 
             if (user == null)
                 return View(new LoginModel());
-            else
-                return RedirectToAction("Index", "Bank");
+            return RedirectToAction("Index", "Bank");
 
         }
 
@@ -3623,7 +3696,7 @@ namespace KeklandBankSystem.Controllers
                     var proj = list.First();
                     var lastTicketUser = await _bankServices.GetEntityTicketInformation(proj.CreatorId);
 
-                    var model = new AdminEntityProjectTicket()
+                    var model = new AdminEntityProjectTicket
                     {
                         image = proj.ImageUrl,
                         Information = proj.Information,
@@ -3638,9 +3711,11 @@ namespace KeklandBankSystem.Controllers
 
                     return View(model);
                 }
-                else return View(null);
+
+                return View(null);
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpPost("admin/check_prjects")]
@@ -3653,7 +3728,7 @@ namespace KeklandBankSystem.Controllers
             {
                 if(model.isOk)
                 {
-                    await _bankServices.CreateProject(new Infrastructure.Project()
+                    await _bankServices.CreateProject(new Infrastructure.Project
                     {
                         AuthorId = model.AuthorId,
                         Balance = 0,
@@ -3663,7 +3738,7 @@ namespace KeklandBankSystem.Controllers
                         Target = model.Target
                     });
 
-                    await _bankServices.CreateEntityTicket(new EntityTicketInformation()
+                    await _bankServices.CreateEntityTicket(new EntityTicketInformation
                     {
                         Date = _bankServices.NowDateTime(),
                         Status = "status_ok",
@@ -3682,7 +3757,7 @@ namespace KeklandBankSystem.Controllers
                 }
                 else
                 {
-                    await _bankServices.CreateEntityTicket(new EntityTicketInformation()
+                    await _bankServices.CreateEntityTicket(new EntityTicketInformation
                     {
                         Date = _bankServices.NowDateTime(),
                         Status = "status_declaim",
@@ -3700,7 +3775,8 @@ namespace KeklandBankSystem.Controllers
                     return RedirectToAction("CheckEntityProject", "Bank");
                 }
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpGet("user/createProjectTicket")]
@@ -3715,11 +3791,13 @@ namespace KeklandBankSystem.Controllers
 
                 await _bankServices.UpdateUser(user);
 
-                return View(new EntityTicketProjectModel() { 
+                return View(new EntityTicketProjectModel
+                { 
                     lastTickets = lasTicket
                 });
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpPost("user/createProjectTicket")]
@@ -3737,7 +3815,7 @@ namespace KeklandBankSystem.Controllers
                     return View(model);
                 }
 
-                var proj = new EntityTicketProject()
+                var proj = new EntityTicketProject
                 {
                     CreatorId = user.Id,
                     Information = model.ticketProj.Information,
@@ -3774,7 +3852,7 @@ namespace KeklandBankSystem.Controllers
                 }
 
                 await _bankServices.CreateEntityProject(proj);
-                await _bankServices.CreateEntityTicket(new EntityTicketInformation()
+                await _bankServices.CreateEntityTicket(new EntityTicketInformation
                 {
                     Date = _bankServices.NowDateTime(),
                     Status = "status_timing",
@@ -3785,7 +3863,8 @@ namespace KeklandBankSystem.Controllers
                 return RedirectToAction("Index", "Bank");
 
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         // org
@@ -3805,7 +3884,7 @@ namespace KeklandBankSystem.Controllers
                     var org = list.First();
                     var lastTicketUser = await _bankServices.GetEntityTicketInformation(org.CreatorId);
 
-                    var model = new AdminEntityOrganizationTicket()
+                    var model = new AdminEntityOrganizationTicket
                     {
                         image = org.ImageUrl,
                         isOk = false,
@@ -3820,9 +3899,11 @@ namespace KeklandBankSystem.Controllers
 
                     return View(model);
                 }
-                else return View(null);
+
+                return View(null);
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpPost("admin/check_organizations")]
@@ -3835,7 +3916,7 @@ namespace KeklandBankSystem.Controllers
             {
                 if (model.isOk)
                 {
-                    await _bankServices.CreateOrganization(new Organization()
+                    await _bankServices.CreateOrganization(new Organization
                     {
                         AdminId = model.AuthorId,
                         Balance = 0,
@@ -3849,7 +3930,7 @@ namespace KeklandBankSystem.Controllers
                         ImageUrl = model.image
                     });
 
-                    await _bankServices.CreateEntityTicket(new EntityTicketInformation()
+                    await _bankServices.CreateEntityTicket(new EntityTicketInformation
                     {
                         Date = _bankServices.NowDateTime(),
                         Status = "status_ok",
@@ -3868,7 +3949,7 @@ namespace KeklandBankSystem.Controllers
                 }
                 else
                 {
-                    await _bankServices.CreateEntityTicket(new EntityTicketInformation()
+                    await _bankServices.CreateEntityTicket(new EntityTicketInformation
                     {
                         Date = _bankServices.NowDateTime(),
                         Status = "status_declaim",
@@ -3886,7 +3967,8 @@ namespace KeklandBankSystem.Controllers
                     return RedirectToAction("CheckEntityProject", "Bank");
                 }
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpGet("user/createOrganizationTicket")]
@@ -3901,12 +3983,13 @@ namespace KeklandBankSystem.Controllers
 
                 await _bankServices.UpdateUser(user);
 
-                return View(new EntityTicketOrganizationModel()
+                return View(new EntityTicketOrganizationModel
                 {
                     lastTickets = lasTicket
                 });
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpPost("user/createOrganizationTicket")]
@@ -3916,7 +3999,7 @@ namespace KeklandBankSystem.Controllers
 
             if (user != null)
             {
-                var org = new EntityTicketOrganization()
+                var org = new EntityTicketOrganization
                 {
                     CreatorId = user.Id,
                     ImageUrl = model.ticketOrg.ImageUrl,
@@ -3957,7 +4040,7 @@ namespace KeklandBankSystem.Controllers
                 }
 
                 await _bankServices.CreateEntityOrganization(org);
-                await _bankServices.CreateEntityTicket(new EntityTicketInformation()
+                await _bankServices.CreateEntityTicket(new EntityTicketInformation
                 {
                     Date = _bankServices.NowDateTime(),
                     Status = "status_timing",
@@ -3968,7 +4051,8 @@ namespace KeklandBankSystem.Controllers
                 return RedirectToAction("Index", "Bank");
 
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         // gov
@@ -3990,7 +4074,7 @@ namespace KeklandBankSystem.Controllers
                     var gov = list.First();
                     var lastTicketUser = await _bankServices.GetEntityTicketInformation(gov.CreatorId);
 
-                    var model = new AdminEntityGovermentTicket()
+                    var model = new AdminEntityGovermentTicket
                     {
                         isOk = false,
                         lastTickets = lastTicketUser,
@@ -4006,9 +4090,11 @@ namespace KeklandBankSystem.Controllers
 
                     return View(model);
                 }
-                else return View(null);
+
+                return View(null);
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpPost("admin/check_goverments")]
@@ -4041,7 +4127,7 @@ namespace KeklandBankSystem.Controllers
 
                     await _bankServices.CreateOrganization(mainOrg);
 
-                    var gov = new GovermentPolitical()
+                    var gov = new GovermentPolitical
                     {
                         FreeOrganizationCreateCount = 15,
                         Name = model.Name,
@@ -4069,7 +4155,7 @@ namespace KeklandBankSystem.Controllers
                     mainOrg.Status = "status_ok";
                     mainOrg.Balance = model.Budget;
 
-                    await _bankServices.CreateBankTransaction(new BankTransaction()
+                    await _bankServices.CreateBankTransaction(new BankTransaction
                     {
                         Date = _bankServices.NowDateTime(),
                         Id1 = -1,
@@ -4082,7 +4168,7 @@ namespace KeklandBankSystem.Controllers
 
                     //
 
-                    await _bankServices.CreateEntityTicket(new EntityTicketInformation()
+                    await _bankServices.CreateEntityTicket(new EntityTicketInformation
                     {
                         Date = _bankServices.NowDateTime(),
                         Status = "status_ok",
@@ -4101,7 +4187,7 @@ namespace KeklandBankSystem.Controllers
                 }
                 else
                 {
-                    await _bankServices.CreateEntityTicket(new EntityTicketInformation()
+                    await _bankServices.CreateEntityTicket(new EntityTicketInformation
                     {
                         Date = _bankServices.NowDateTime(),
                         Status = "status_declaim",
@@ -4119,7 +4205,8 @@ namespace KeklandBankSystem.Controllers
                     return RedirectToAction("CheckEntityGoverment", "Bank");
                 }
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpGet("user/createGovermentTicket")]
@@ -4134,12 +4221,13 @@ namespace KeklandBankSystem.Controllers
 
                 await _bankServices.UpdateUser(user);
 
-                return View(new EntityTicketGovermentModel()
+                return View(new EntityTicketGovermentModel
                 {
                     lastTickets = lasTicket
                 });
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpPost("user/createGovermentTicket")]
@@ -4149,7 +4237,7 @@ namespace KeklandBankSystem.Controllers
 
             if (user != null)
             {
-                var gov = new EntityTicketGoverment()
+                var gov = new EntityTicketGoverment
                 {
                     CreatorId = user.Id,
                     Information = model.ticketGov.Information,
@@ -4214,7 +4302,7 @@ namespace KeklandBankSystem.Controllers
                 }
 
                 await _bankServices.CreateEntityGoverment(gov);
-                await _bankServices.CreateEntityTicket(new EntityTicketInformation()
+                await _bankServices.CreateEntityTicket(new EntityTicketInformation
                 {
                     Date = _bankServices.NowDateTime(),
                     Status = "status_timing",
@@ -4225,7 +4313,8 @@ namespace KeklandBankSystem.Controllers
                 return RedirectToAction("Index", "Bank");
 
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
 
@@ -4237,7 +4326,7 @@ namespace KeklandBankSystem.Controllers
             var adm = (await _bankServices.UserIsInRole(user, "Administrator")) || (await _bankServices.UserIsInRole(user, "Owner"));
 
             if(user != null)
-            { 
+            {
                 if (item != null)
                 {
                     if ((item.isActived && item.isCaseItem == false) || adm)
@@ -4246,7 +4335,7 @@ namespace KeklandBankSystem.Controllers
 
                         if (mess == null)
                         {
-                            model = new ShopItemModel()
+                            model = new ShopItemModel
                             {
                                 shopItem = item,
                                 Message = null,
@@ -4254,7 +4343,7 @@ namespace KeklandBankSystem.Controllers
                         }
                         else
                         {
-                            model = new ShopItemModel()
+                            model = new ShopItemModel
                             {
                                 shopItem = item,
                                 Message = mess,
@@ -4264,11 +4353,14 @@ namespace KeklandBankSystem.Controllers
 
                         return View(model);
                     }
-                    else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+                    return RedirectToAction("Error", "Bank", new { code = 700 });
                 }
-                else return RedirectToAction("Error", "Bank", new { code = 404 });
+
+                return RedirectToAction("Error", "Bank", new { code = 404 });
             }
-            else return RedirectToAction("Error", "Bank", new { code = 404 });
+
+            return RedirectToAction("Error", "Bank", new { code = 404 });
         }
 
         [HttpPost("getNalogTransfer/")]
@@ -4367,7 +4459,7 @@ namespace KeklandBankSystem.Controllers
                     await _bankServices.UpdateItemStatistic(last);
                 }
 
-                await _bankServices.CreateBankTransaction(new BankTransaction()
+                await _bankServices.CreateBankTransaction(new BankTransaction
                 {
                     Date = _bankServices.NowDateTime(),
                     Id1 = user.Id,
@@ -4376,7 +4468,7 @@ namespace KeklandBankSystem.Controllers
                     Value = price
                 });
 
-                await _bankServices.CreateTransaction(new Transaction()
+                await _bankServices.CreateTransaction(new Transaction
                 {
                     Date = _bankServices.NowDateTime(),
                     Id1 = user.Id,
@@ -4387,7 +4479,8 @@ namespace KeklandBankSystem.Controllers
 
                 return RedirectToAction("UserShopItem", "Bank", new { id = user.Id, mess = "Предмет успешно куплен", type = true });
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpGet("user/items/{id}")]
@@ -4398,7 +4491,7 @@ namespace KeklandBankSystem.Controllers
             {
                 var list = await _bankServices.GetUserItemFunc(user);
 
-                var model = new UserItemModel()
+                var model = new UserItemModel
                 {
                     items = list,
                     user = user,
@@ -4408,7 +4501,8 @@ namespace KeklandBankSystem.Controllers
 
                 return View(model);
             }
-            else return RedirectToAction("Error", "Bank", new { code = 404 });
+
+            return RedirectToAction("Error", "Bank", new { code = 404 });
         }
 
         [HttpPost("user/login")]
@@ -4430,7 +4524,8 @@ namespace KeklandBankSystem.Controllers
 
                     return RedirectToAction("Index", "Bank");
                 }
-                else ModelState.AddModelError("", "Некорректные логин и(или) пароль");
+
+                ModelState.AddModelError("", "Некорректные логин и(или) пароль");
             }
             return View(model);
         }
@@ -4446,7 +4541,7 @@ namespace KeklandBankSystem.Controllers
 
             var userItem = await _bankServices.GetUserItem(user);
 
-            var model = new TradeItemShop()
+            var model = new TradeItemShop
             {
                 ShopItemId = item.Id,
                 newSum = item.Price,
@@ -4483,7 +4578,7 @@ namespace KeklandBankSystem.Controllers
             if (tradeItem.Count == 0) await _bankServices.TradeItemRemove(tradeItem);
             else await _bankServices.UpdateTradeItem(tradeItem);
 
-            await _bankServices.CreateTransaction(new Transaction()
+            await _bankServices.CreateTransaction(new Transaction
             {
                 Date = _bankServices.NowDateTime(),
                 Id1 = user.Id,
@@ -4508,10 +4603,8 @@ namespace KeklandBankSystem.Controllers
                 var model = new BuyWelframe();
                 return View(model);
             }
-            else
-            {
-                return RedirectToAction("Error", "Bank", new { code = 700 });
-            }
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpPost("buyWeith")]
@@ -4538,7 +4631,7 @@ namespace KeklandBankSystem.Controllers
                 await _bankServices.UpdateOrganization(org);
                 await _bankServices.UpdateUser(user);
 
-                await _bankServices.CreateBankTransaction(new BankTransaction()
+                await _bankServices.CreateBankTransaction(new BankTransaction
                 {
                     Date = _bankServices.NowDateTime(),
                     Id1 = user.Id,
@@ -4547,7 +4640,7 @@ namespace KeklandBankSystem.Controllers
                     Value = money
                 });
 
-                await _bankServices.CreateTransaction(new Transaction()
+                await _bankServices.CreateTransaction(new Transaction
                 {
                     Date = _bankServices.NowDateTime(),
                     Id1 = user.Id,
@@ -4558,10 +4651,8 @@ namespace KeklandBankSystem.Controllers
 
                 return RedirectToAction("UserWeith", "Bank");
             }
-            else
-            {
-                return RedirectToAction("Error", "Bank", new { code = 700 });
-            }
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpGet("userWeith")]
@@ -4573,7 +4664,7 @@ namespace KeklandBankSystem.Controllers
 
             if (user != null)
             {
-                var model = new WeithUser()
+                var model = new WeithUser
                 {
                     Weith = user.Welfare + (int)(user.WelfareItem * 3.20),
                     MyLevel = userLevel,
@@ -4582,10 +4673,8 @@ namespace KeklandBankSystem.Controllers
 
                 return View(model);
             }
-            else
-            {
-                return RedirectToAction("Error", "Bank", new { code = 700 });
-            }
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpGet("trade_govement_item/{id}")]
@@ -4620,12 +4709,12 @@ namespace KeklandBankSystem.Controllers
             if (perm.CreatePromoCode)
             {
                 var list = await _bankServices.GetListPassCodes();
-                var PromoCode = new PassCode()
+                var PromoCode = new PassCode
                 {
                     Value = "1"
                 };
 
-                var model = new CreatePassCodeModel()
+                var model = new CreatePassCodeModel
                 {
                     passcode = PromoCode,
                     listPassCodes = list
@@ -4633,7 +4722,8 @@ namespace KeklandBankSystem.Controllers
 
                 return View(model);
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpPost("create_promo")]
@@ -4651,14 +4741,15 @@ namespace KeklandBankSystem.Controllers
                 return RedirectToAction("Index", "Bank");
 
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpGet("active_code")]
         [Authorize]
         public IActionResult ActiveCode(string message)
         {
-            var model = new CodeModeActive()
+            var model = new CodeModeActive
             {
                 Message = message
             };
@@ -4714,7 +4805,8 @@ namespace KeklandBankSystem.Controllers
 
                 return View(item);
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpPost("set_useritem")]
@@ -4739,7 +4831,8 @@ namespace KeklandBankSystem.Controllers
 
                 return RedirectToAction("Balance", "Bank", new { id = model.User.Id });
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpGet("set_useritem")]
@@ -4753,7 +4846,7 @@ namespace KeklandBankSystem.Controllers
             {
                 var userFind = await _bankServices.FindByIdAsync(id);
 
-                var model = new SetUserItemModel()
+                var model = new SetUserItemModel
                 {
                     User = userFind
                 };
@@ -4761,7 +4854,8 @@ namespace KeklandBankSystem.Controllers
                 return View(model);
 
             }
-            else return RedirectToAction("Error", "Bank", new { code = 700 });
+
+            return RedirectToAction("Error", "Bank", new { code = 700 });
         }
 
         [HttpPost("active_code")]
@@ -4786,7 +4880,7 @@ namespace KeklandBankSystem.Controllers
                         case "type_money":
                             user.Money += Convert.ToInt32(passcode.Value);
 
-                            await _bankServices.CreateTransaction(new Transaction()
+                            await _bankServices.CreateTransaction(new Transaction
                             {
                                 Date = _bankServices.NowDateTime(),
                                 Id1 = -1,
@@ -4832,7 +4926,7 @@ namespace KeklandBankSystem.Controllers
 
                             user.Money += money;
 
-                            await _bankServices.CreateTransaction(new Transaction()
+                            await _bankServices.CreateTransaction(new Transaction
                             {
                                 Date = _bankServices.NowDateTime(),
                                 Id1 = -1,
@@ -4856,12 +4950,11 @@ namespace KeklandBankSystem.Controllers
 
                     }
                 }
-                else
-                {
-                    return RedirectToAction("ActiveCode", "Bank", new { message = "Промокод уже использован!" });
-                }
+
+                return RedirectToAction("ActiveCode", "Bank", new { message = "Промокод уже использован!" });
             }
-            else return RedirectToAction("ActiveCode", "Bank", new { message = "Неверный промо-код." });
+
+            return RedirectToAction("ActiveCode", "Bank", new { message = "Неверный промо-код." });
         }
 
         [HttpPost("trade_govement_item/{id}")]
@@ -4901,7 +4994,7 @@ namespace KeklandBankSystem.Controllers
             user.Money += cost;
             org.Balance -= cost;
 
-            await _bankServices.CreateBankTransaction(new BankTransaction()
+            await _bankServices.CreateBankTransaction(new BankTransaction
             {
                 BankId1 = org.Id,
                 Id2 = user.Id,
@@ -4923,7 +5016,7 @@ namespace KeklandBankSystem.Controllers
             var user = await _bankServices.GetUser();
             var isprem = _bankServices.UserHavePremium(user);
 
-            return View(new CreateAdModel()
+            return View(new CreateAdModel
             {
                 UserIsPrem = isprem,
                 Value = 1
@@ -4954,7 +5047,7 @@ namespace KeklandBankSystem.Controllers
 
                 if (user.Money >= value * model.Value)
                 {
-                    var ads = new Ads()
+                    var ads = new Ads
                     {
                         CreatorId = user.Id,
                         isBigger = model.isBigger,
@@ -4993,7 +5086,7 @@ namespace KeklandBankSystem.Controllers
                     user.Money -= value * model.Value;
                     await _bankServices.SpentMoney(value * model.Value);
                     await _bankServices.AddToRecdStat(value * model.Value);
-                    await _bankServices.CreateBankTransaction(new BankTransaction()
+                    await _bankServices.CreateBankTransaction(new BankTransaction
                     {
                         Date = _bankServices.NowDateTime(),
                         Id1 = user.Id,
@@ -5007,18 +5100,14 @@ namespace KeklandBankSystem.Controllers
 
                     return RedirectToAction("Index", "Bank");
                 } // TODO
-                else
-                {
-                    ModelState.AddModelError("", "У вас не хватает денег.");
-                    return View(model);
-                }
+
+                ModelState.AddModelError("", "У вас не хватает денег.");
+                return View(model);
 
             }
-            else
-            {
-                ModelState.AddModelError("", "Неверное количество показов.");
-                return View(model);
-            }
+
+            ModelState.AddModelError("", "Неверное количество показов.");
+            return View(model);
         }
 
         [HttpPost("trade_item_place/{idItem}")]
@@ -5149,8 +5238,7 @@ namespace KeklandBankSystem.Controllers
 
             if (user == null)
                 return View(new RegisterModel());
-            else 
-                return RedirectToAction("Index", "Bank");
+            return RedirectToAction("Index", "Bank");
         }
 
         /*[HttpPost("user/register")]
@@ -5262,50 +5350,48 @@ namespace KeklandBankSystem.Controllers
                 await Authenticate(findUser.Name);
                 return RedirectToAction("Index", "Bank");
             }
-            else
+
+            if (string.IsNullOrEmpty(model.Name) || string.IsNullOrEmpty(model.Password))
             {
-                if (string.IsNullOrEmpty(model.Name) || string.IsNullOrEmpty(model.Password))
-                {
-                    ModelState.AddModelError("", "Неверные данные.");
-                    return View(model);
-                }
-
-                var user = new User
-                {
-                    Name = model.Name,
-                    Password = Crypto.HashPassword(model.Password),
-                    Money = 0,
-                    VKUniqId = model.VKUid,
-                    ImageUrl = "/userImages/" + "default_image.png"
-                };
-
-                if (model.Name.Contains(">") || model.Name.Contains("=") || model.Name.Contains("<") || model.Name.Contains(":") || model.Name.Contains("\""))
-                {
-                    ModelState.AddModelError("", "Некорентный ввод.");
-                    return View(model);
-                }
-
-                if (string.IsNullOrEmpty(model.Name) || model.Name.Length > 20 || model.Name.Length < 3)
-                {
-                    ModelState.AddModelError("", "Максимальная длина имени: 20, минимальная 3.");
-                    return View(model);
-                }
-
-                var search = await _bankServices.FindByNameAsync(model.Name);
-
-                if (search != null)
-                {
-                    ModelState.AddModelError("", "Никнейм занят.");
-                    return View(model);
-                }
-
-                await _bankServices.CreateUserAsync(user); // добавляем пользователя
-
-                await _bankServices.CreateRoleUser(new UserRole() { RoleName = "User", UserId = user.Id });
-
-                await Authenticate(model.Name);
-                return RedirectToAction("Index", "Bank");
+                ModelState.AddModelError("", "Неверные данные.");
+                return View(model);
             }
+
+            var user = new User
+            {
+                Name = model.Name,
+                Password = Crypto.HashPassword(model.Password),
+                Money = 0,
+                VKUniqId = model.VKUid,
+                ImageUrl = "/userImages/" + "default_image.png"
+            };
+
+            if (model.Name.Contains(">") || model.Name.Contains("=") || model.Name.Contains("<") || model.Name.Contains(":") || model.Name.Contains("\""))
+            {
+                ModelState.AddModelError("", "Некорентный ввод.");
+                return View(model);
+            }
+
+            if (string.IsNullOrEmpty(model.Name) || model.Name.Length > 20 || model.Name.Length < 3)
+            {
+                ModelState.AddModelError("", "Максимальная длина имени: 20, минимальная 3.");
+                return View(model);
+            }
+
+            var search = await _bankServices.FindByNameAsync(model.Name);
+
+            if (search != null)
+            {
+                ModelState.AddModelError("", "Никнейм занят.");
+                return View(model);
+            }
+
+            await _bankServices.CreateUserAsync(user); // добавляем пользователя
+
+            await _bankServices.CreateRoleUser(new UserRole { RoleName = "User", UserId = user.Id });
+
+            await Authenticate(model.Name);
+            return RedirectToAction("Index", "Bank");
         }
 
 
@@ -5326,16 +5412,15 @@ namespace KeklandBankSystem.Controllers
                 await Authenticate(findUser.Name);
                 return RedirectToAction("Index", "Bank");
             }
-            else // регистрация
+
+            // регистрация
+            return View(new RegisterVKModel
             {
-                return View(new RegisterVKModel()
-                {
-                    Name = fn + " " + ln,
-                    Password = "",
-                    Photo = photo,
-                    VKUid = uid
-                });
-            }
+                Name = fn + " " + ln,
+                Password = "",
+                Photo = photo,
+                VKUid = uid
+            });
         }
 
         public static string MD5HashPHP(string str)
@@ -5352,14 +5437,16 @@ namespace KeklandBankSystem.Controllers
 
             if (user != null)
             {
-                var model = new EditUserModelSettings()
+                var model = new EditUserModelSettings
                 {
                     Name = user.Name,
                     Password = "",
                 };
 
                 return View(model);
-            } else return RedirectToAction("Index", "Bank");
+            }
+
+            return RedirectToAction("Index", "Bank");
         }
 
         [HttpPost("user/settings")]
@@ -5423,7 +5510,8 @@ namespace KeklandBankSystem.Controllers
                     await Authenticate(model.Name);
                     return RedirectToAction("Index", "Bank");
                 }
-                else ModelState.AddModelError("", "Пользователь с таким именем уже существует.");
+
+                ModelState.AddModelError("", "Пользователь с таким именем уже существует.");
             }
             return View(model);
         }
@@ -5484,7 +5572,7 @@ namespace KeklandBankSystem.Controllers
                     }
                 }
 
-                var code = new RegCode()
+                var code = new RegCode
                 {
                     Code = result
                 };

@@ -6,8 +6,8 @@
     var user = await _BankServices.GetUser();
 
 
-    var topUser = new List<User>()
-{
+    var topUser = new List<User>
+    {
         BankServices.topUser.ElementAtOrDefault(0),
         BankServices.topUser.ElementAtOrDefault(1),
         BankServices.topUser.ElementAtOrDefault(2)
@@ -15,8 +15,8 @@
 
     var s = _BankServices.GetTopOrganization(3);
 
-    var toporg = new List<Organization>()
-{
+    var toporg = new List<Organization>
+    {
         s.ElementAtOrDefault(0),
         s.ElementAtOrDefault(1),
         s.ElementAtOrDefault(2)
@@ -24,8 +24,8 @@
 
     var h = await _BankServices.GetTopGoverment(3);
 
-    var topgov = new List<GovermentStatistics>()
-{
+    var topgov = new List<GovermentStatistics>
+    {
         h.ElementAtOrDefault(0),
         h.ElementAtOrDefault(1),
         h.ElementAtOrDefault(2)

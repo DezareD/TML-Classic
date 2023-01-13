@@ -139,7 +139,7 @@
                 <span class="mini-money">Мемларов</span>
                 @if (user != null)
                 {
-                    var job = await _BankServices.GetUserJob(user, new Organization() { Id = Model.organization.Id });
+                    var job = await _BankServices.GetUserJob(user, new Organization { Id = Model.organization.Id });
 
                     if (job != null)
                     {

@@ -6,7 +6,7 @@
     var tovar = await _BankServices.GetAllItems();
     var col_news = (await _BankServices.GetAllNews()).Count(m => m.Type == "status_timing");
     var tovar_int = tovar.Count(m => m.isActived == false);
-    var welfare = new WeithLevel() { Id = -1 };
+    var welfare = new WeithLevel { Id = -1 };
 
     if (user != null)
     {

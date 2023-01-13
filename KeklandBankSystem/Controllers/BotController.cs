@@ -37,7 +37,7 @@ namespace KeklandBankSystem.Controllers
         {
             var massive = new Command[]
             {
-                new Command() { command = new string[] { "getVk", "!getvk", "Получить профиль", "getvk", "!getVk" }, Id = 0 }
+                new Command { command = new string[] { "getVk", "!getvk", "Получить профиль", "getvk", "!getVk" }, Id = 0 }
             };
 
             var text = message.Text.Replace("[club191094689|@kekland_bank] ", "").Replace("[club191094689|Мемцарская Республика] ", "");
