@@ -541,11 +541,17 @@ namespace KeklandBankSystem.Controllers
                 }
 
                 var stavka = await _bankServices.GetStavka();
-                var nalog = 3;
+                var nalog = stavka;
 
                 if (model.Value > 100)
                 {
                     nalog = (int)((model.Value / 100) * stavka);
+                }
+
+                if (model.Value < stavka)
+                {
+                    ModelState.AddModelError("", "Минимум " + stavka + " Мемлар!");
+                    return View(model);
                 }
 
                 if (model.Value + nalog > orgIn.Balance)
@@ -1930,7 +1936,13 @@ namespace KeklandBankSystem.Controllers
             }
 
             var stavka = await _bankServices.GetStavka();
-            var nalog = 3;
+            var nalog = stavka;
+
+            if (model.Value < stavka)
+            {
+                ModelState.AddModelError("", "Минимум " + stavka + " Мемлар!");
+                return View(model);
+            }
 
             if (model.Value > 100)
             {
@@ -1957,6 +1969,7 @@ namespace KeklandBankSystem.Controllers
                     Value = model.Value
                 };
 
+                // TODO WTF??
                 if (orgTo.Id == 19)
                 {
                     await _bankServices.AddToRecdStat(model.Value);
@@ -3346,11 +3359,17 @@ namespace KeklandBankSystem.Controllers
             }
 
             var stavka = await _bankServices.GetStavka();
-            var nalog = 3;
+            var nalog = stavka;
 
             if (model.Value > 100)
             {
                 nalog = (int)((model.Value / 100) * stavka);
+            }
+
+            if (model.Value < stavka)
+            {
+                ModelState.AddModelError("", "Минимум " + stavka + " Мемлар!");
+                return View(model);
             }
 
             if (model.Value + nalog > userIn.Money)
