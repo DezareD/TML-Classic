@@ -89,7 +89,7 @@ namespace KeklandBankSystem
             services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie();
 
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-            services.AddTransient<IBankServices, BankServices>();
+            services.AddScoped<IBankServices, BankServices>();
 
             services.ConfigureApplicationCookie(options =>
             {

@@ -5020,7 +5020,13 @@ namespace KeklandBankSystem.Controllers
                 return View(model);
             }
 
-            if(model.newSum > 2*item.Price)
+            if (model.newSum <= 0)
+            {
+                ModelState.AddModelError("", "Новая цена должна быть больше нуля.");
+                return View(model);
+            }
+
+            if (model.newSum > 2*item.Price)
             {
                 ModelState.AddModelError("", "Максимальная стоимость перепродажи - в 2 раза.");
                 return View(model);
