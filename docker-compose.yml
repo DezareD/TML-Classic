@@ -35,11 +35,11 @@ services:
     ports:
       - 5001:5001
     volumes:
-      - /var/lib/docker/volumes/rival-politics-core/_data/tml-classic/wwroot/user_img:/app/wwwroot/user_img
-      - /var/lib/docker/volumes/rival-politics-core/_data/tml-classic/wwwroot/userImages:/app/wwwroot/userImages
-      - /var/lib/docker/volumes/rival-politics-core/_data/tml-classic/wwwroot/userImagesAds:/app/wwwroot/userImagesAds
-      - /var/lib/docker/volumes/rival-politics-core/_data/tml-classic/wwwroot/userImagesStatic:/app/wwwroot/userImagesStatic
-      - /var/lib/docker/volumes/rival-politics-core/_data/tml-classic/wwwroot/userImagesTicket:/app/wwwroot/userImagesTicket
+      - /var/lib/docker/volumes/tml-classic-volume/_data/tml-classic/wwwroot/user_img:/app/wwwroot/user_img
+      - /var/lib/docker/volumes/tml-classic-volume/_data/tml-classic/wwwroot/userImages:/app/wwwroot/userImages
+      - /var/lib/docker/volumes/tml-classic-volume/_data/tml-classic/wwwroot/userImagesAds:/app/wwwroot/userImagesAds
+      - /var/lib/docker/volumes/tml-classic-volume/_data/tml-classic/wwwroot/userImagesStatic:/app/wwwroot/userImagesStatic
+      - /var/lib/docker/volumes/tml-classic-volume/_data/tml-classic/wwwroot/userImagesTicket:/app/wwwroot/userImagesTicket
 
 volumes:
   tml-classic-volume:
