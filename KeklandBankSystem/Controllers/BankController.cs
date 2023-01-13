@@ -3853,6 +3853,9 @@ namespace KeklandBankSystem.Controllers
                     VKUrl = model.ticketOrg.VKUrl
                 };
 
+                var lasTicket = await _bankServices.GetEntityTicketInformation(user.Id);
+                model.lastTickets = lasTicket;
+
                 if (model.ImageUrl != null || !string.IsNullOrEmpty(model.ImageStringUrl))
                 {
                     if (model.ImageUrl != null)

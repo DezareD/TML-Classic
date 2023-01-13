@@ -22,7 +22,7 @@
         {
             <a class="menu-url" href="@Url.Action("EditGovermentPolitical", "Bank", new { id = Model.GovermentPolitical.Id })"><i class="fas fa-edit"></i> Редактировать</a>
             <a class="menu-url" href="@Url.Action("GetGovermentTaxes", "Bank", new { id = Model.GovermentPolitical.Id })"><i class="fas fa-edit"></i> Налог</a>
-            @if (perm.CreateOrganization)
+            @if (user.Id == Model.GovermentPolitical.LeaderId || perm.CreateOrganization)
             {
                 <a class="menu-url" href="@Url.Action("GovCreateOrganization", "Bank", new { id = Model.GovermentPolitical.Id })"><i class="fas fa-edit"></i> Создать гос. организацию</a>
             }
