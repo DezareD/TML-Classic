@@ -5204,7 +5204,8 @@ namespace KeklandBankSystem.Controllers
                 list = list.Where(m => m.RareType == rare).ToList();
             }
 
-            var retList = list.Where(m => m.isActived == true).Where(m => m.isCaseItem == false).ToList();
+            var retList = list.Where(m => m.isActived == true).Where(m => m.isCaseItem == false)
+                .Where(m => m.Value > 0).ToList();
 
             if (!string.IsNullOrEmpty(search))
             {
