@@ -18,6 +18,8 @@ using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace KeklandBankSystem.Controllers
 {
+    [Route("api")]
+    [ApiController]
     public class BotController : Controller
     {
         private readonly IConfiguration _configuration;
@@ -31,8 +33,8 @@ namespace KeklandBankSystem.Controllers
             _bankServices = bankServices;
         }
 
-        [HttpPost("callback/confirm")]
-        public IActionResult Register(VkCallBackApiRequest model)
+        [HttpPost]
+        public IActionResult CallBack([FromBody] VkCallBackApiRequest model)
         {
             if (model == null)
                 return BadRequest();
@@ -55,7 +57,7 @@ namespace KeklandBankSystem.Controllers
                         Message = msg.Text
                     });
                 }
-
+                    
                 if (model.Type == "confirmation")
                 {
                     return Ok(Environment.GetEnvironmentVariable("API_VKCALLBACKAPI_STRINGREQUEST"));
