@@ -39,19 +39,6 @@ namespace KeklandBankSystem.Controllers
             if (model.Secret != Environment.GetEnvironmentVariable("API_VKCALLBACKAPI_SECRETSTRING"))
                 return Ok("[error] error secret");
 
-            if (model.Type == "message_new")
-            {
-                var msg = Message.FromJson(new VkResponse(model.Object));
-
-                _vkApi.Messages.Send(new MessagesSendParams
-                {
-                    RandomId = new DateTime().Millisecond,
-                    PeerId = msg.PeerId,
-                    Message = msg.Text
-                });
-
-                return Ok("ok");
-            }
 
             if (model.Type == "confirmation")
             {
