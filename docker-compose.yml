@@ -29,6 +29,10 @@ services:
       - API_HangFireUrling=${API_HangFireUrling}
       - VkConnect_AppId=${VkConnect_AppId}
       - VkConnect_SecretKey=${VkConnect_SecretKey}
+      - API_VKCALLBACKAPI_APISTRING=${API_VKCALLBACKAPI_APISTRING}
+      - API_VKCALLBACKAPI_SECRETSTRING=${API_VKCALLBACKAPI_SECRETSTRING}
+      - API_VKCALLBACKAPI_STRINGREQUEST=${API_VKCALLBACKAPI_STRINGREQUEST}
+      - API_VKCALLBACKAPI_GROUPID=${API_VKCALLBACKAPI_GROUPID}
     networks:
       - rival-politics-core-network
       - tml-classic-network
