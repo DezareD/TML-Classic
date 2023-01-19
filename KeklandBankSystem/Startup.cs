@@ -91,6 +91,12 @@ namespace KeklandBankSystem
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddScoped<IBankServices, BankServices>();
 
+            services.AddSingleton<IVkApi>(sp => {
+                var api = new VkApi();
+                api.Authorize(new ApiAuthParams { AccessToken = Environment.GetEnvironmentVariable("API_VKCALLBACKAPI_APISTRING") });
+                return api;
+            });
+
             services.ConfigureApplicationCookie(options =>
             {
                 options.LoginPath = new PathString("/user/login");
