@@ -48,7 +48,7 @@ namespace KeklandBankSystem.Controllers
                     Message = msg.Text
                 });
             }
-                
+
             if (model.Type == "confirmation")
             {
                 return Ok(Environment.GetEnvironmentVariable("API_VKCALLBACKAPI_STRINGREQUEST"));
@@ -63,27 +63,21 @@ namespace KeklandBankSystem.Controllers
                     UserId = objectResponse.UserId,
                     Message = "Подписка куплена."
                 });
-            }   
+            }
             else if (model.Type == "donut_subscription_prolonged")
             {
-
             }
             else if (model.Type == "donut_subscription_expired")
             {
-
             }
             else if (model.Type == "donut_subscription_cancelled")
             {
-
-            }    
+            }
             else if (model.Type == "donut_subscription_price_changed")
             {
+            }
 
-            }
-            else
-            {
-                return Ok("[error] not found type");
-            }
+            return Ok("[error] not found type");
         }
     }
 }
