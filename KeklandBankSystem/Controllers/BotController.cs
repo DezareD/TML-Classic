@@ -43,8 +43,7 @@ namespace KeklandBankSystem.Controllers
                 _vkApi.Messages.Send(new MessagesSendParams
                 {
                     RandomId = new DateTime().Millisecond,
-                    PeerId = -1 * groupId,
-                    UserId = msg.UserId,
+                    PeerId = msg.PeerId,
                     Message = msg.Text
                 });
             }
