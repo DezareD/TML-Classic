@@ -20,7 +20,7 @@ namespace KeklandBankSystem.Controllers
 {
     [Route("api")]
     [ApiController]
-    public class BotController : Controller
+    public class BotController : ControllerBase
     {
         private readonly IConfiguration _configuration;
         private readonly IVkApi _vkApi;
@@ -37,14 +37,14 @@ namespace KeklandBankSystem.Controllers
         public IActionResult CallBack([FromBody] VkCallBackApiRequest model)
         {
             if (model == null)
-                return BadRequest();
+                return Ok("[error] Bad model");
 
             var groupId = Convert.ToInt64(Environment.GetEnvironmentVariable("API_VKCALLBACKAPI_GROUPID"));
 
             if (model.GroupId == groupId)
             {
                 if (model.Secret != Environment.GetEnvironmentVariable("API_VKCALLBACKAPI_SECRETSTRING"))
-                    return BadRequest();
+                    return Ok("[error] error secret");
 
                 if (model.Type == "message_new")
                 {
