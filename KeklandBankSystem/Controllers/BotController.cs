@@ -84,7 +84,7 @@ namespace KeklandBankSystem.Controllers
                 }
             }
 
-            return BadRequest();
+            return Ok("Bad Request, trace stack: request groupId" + model.GroupId + " this groupId: " + groupId);
         }
     }
 }

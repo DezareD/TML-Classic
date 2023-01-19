@@ -1,8 +1,10 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System;
 
 namespace KeklandBankSystem.Model.VkApi
 {
+    [Serializable]
     public class VkCallBackApiRequest
     {
         [JsonProperty("type")]

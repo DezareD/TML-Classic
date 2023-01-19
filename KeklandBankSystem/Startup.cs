@@ -93,7 +93,10 @@ namespace KeklandBankSystem
 
             services.AddSingleton<IVkApi>(sp => {
                 var api = new VkApi();
-                api.Authorize(new ApiAuthParams { AccessToken = Environment.GetEnvironmentVariable("API_VKCALLBACKAPI_APISTRING") });
+                api.Authorize(new ApiAuthParams
+                {
+                    AccessToken = Environment.GetEnvironmentVariable("API_VKCALLBACKAPI_APISTRING")
+                });
                 return api;
             });
 
