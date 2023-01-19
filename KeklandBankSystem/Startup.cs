@@ -61,7 +61,8 @@ namespace KeklandBankSystem
                     .SetMinimumLevel(LogLevel.Information)
             );
 
-            services.AddControllersWithViews();
+            services.AddControllersWithViews().AddNewtonsoftJson();
+
             services.AddEntityFrameworkNpgsql()
                 .AddDbContext<BankContext>(options =>
                     options.UseNpgsql(Environment.GetEnvironmentVariable("API_ConnectionString"))
