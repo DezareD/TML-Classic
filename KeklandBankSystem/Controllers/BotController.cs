@@ -1,24 +1,17 @@
 ﻿using KeklandBankSystem.Infrastructure;
 using KeklandBankSystem.Model.VkApi;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using VkNet.Abstractions;
-using VkNet.Enums.SafetyEnums;
 using VkNet.Model;
 using VkNet.Model.GroupUpdate;
-using VkNet.Model.Keyboard;
 using VkNet.Model.RequestParams;
 using VkNet.Utils;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace KeklandBankSystem.Controllers
 {
-    [Route("api")]
+    [Route("api/[controller]")]
     [ApiController]
     public class BotController : ControllerBase
     {
@@ -33,7 +26,7 @@ namespace KeklandBankSystem.Controllers
             _bankServices = bankServices;
         }
 
-        [HttpPost]
+        [HttpPost("callback")]
         public IActionResult CallBack([FromBody] VkCallBackApiRequest model)
         {
             if (model == null)
