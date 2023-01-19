@@ -34,57 +34,56 @@ namespace KeklandBankSystem.Controllers
 
             var groupId = Convert.ToInt64(Environment.GetEnvironmentVariable("API_VKCALLBACKAPI_GROUPID"));
 
-            if (model.GroupId == groupId)
+            if (model.Secret != Environment.GetEnvironmentVariable("API_VKCALLBACKAPI_SECRETSTRING"))
+                return Ok("[error] error secret");
+
+            if (model.Type == "message_new")
             {
-                if (model.Secret != Environment.GetEnvironmentVariable("API_VKCALLBACKAPI_SECRETSTRING"))
-                    return Ok("[error] error secret");
-
-                if (model.Type == "message_new")
+                var msg = Message.FromJson(new VkResponse(model.Object));
+                _vkApi.Messages.Send(new MessagesSendParams
                 {
-                    var msg = Message.FromJson(new VkResponse(model.Object));
-                    _vkApi.Messages.Send(new MessagesSendParams
-                    {
-                        RandomId = new DateTime().Millisecond,
-                        PeerId = -1 * groupId,
-                        UserId = msg.UserId,
-                        Message = msg.Text
-                    });
-                }
-                    
-                if (model.Type == "confirmation")
-                {
-                    return Ok(Environment.GetEnvironmentVariable("API_VKCALLBACKAPI_STRINGREQUEST"));
-                }
-                else if (model.Type == "donut_subscription_create")
-                {
-                    var objectResponse = DonutNew.FromJson(new VkResponse(model.Object));
-                    _vkApi.Messages.Send(new MessagesSendParams()
-                    {
-                        RandomId = new DateTime().Millisecond,
-                        PeerId = -1 * groupId,
-                        UserId = objectResponse.UserId,
-                        Message = "Подписка куплена."
-                    });
-                }   
-                else if (model.Type == "donut_subscription_prolonged")
-                {
-
-                }
-                else if (model.Type == "donut_subscription_expired")
-                {
-
-                }
-                else if (model.Type == "donut_subscription_cancelled")
-                {
-
-                }    
-                else if (model.Type == "donut_subscription_price_changed")
-                {
-
-                }
+                    RandomId = new DateTime().Millisecond,
+                    PeerId = -1 * groupId,
+                    UserId = msg.UserId,
+                    Message = msg.Text
+                });
             }
+                
+            if (model.Type == "confirmation")
+            {
+                return Ok(Environment.GetEnvironmentVariable("API_VKCALLBACKAPI_STRINGREQUEST"));
+            }
+            else if (model.Type == "donut_subscription_create")
+            {
+                var objectResponse = DonutNew.FromJson(new VkResponse(model.Object));
+                _vkApi.Messages.Send(new MessagesSendParams()
+                {
+                    RandomId = new DateTime().Millisecond,
+                    PeerId = -1 * groupId,
+                    UserId = objectResponse.UserId,
+                    Message = "Подписка куплена."
+                });
+            }   
+            else if (model.Type == "donut_subscription_prolonged")
+            {
 
-            return Ok("Bad Request, trace stack: request groupId" + model.GroupId + " this groupId: " + groupId);
+            }
+            else if (model.Type == "donut_subscription_expired")
+            {
+
+            }
+            else if (model.Type == "donut_subscription_cancelled")
+            {
+
+            }    
+            else if (model.Type == "donut_subscription_price_changed")
+            {
+
+            }
+            else
+            {
+                return Ok("[error] not found type");
+            }
         }
     }
 }
